@@ -12,6 +12,18 @@ pub struct DataTemplate {
     fields: Vec<Field>,
 }
 
+impl DataTemplate {
+    pub fn new() -> DataTemplate {
+        DataTemplate {
+            flowset_id: 0,
+            length: 0,
+            template_id: 0,
+            field_count: 0,
+            fields: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct OptionTemplate {
     flowset_id: u16,
