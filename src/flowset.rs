@@ -4,7 +4,7 @@ use field::{Field, Option};
 use std::boxed::Box;
 
 #[derive(Debug, Clone)]
-struct DataTemplate {
+pub struct DataTemplate {
     flowset_id: u16,
     length: u16,
     template_id: u16,
@@ -13,7 +13,7 @@ struct DataTemplate {
 }
 
 #[derive(Debug, Clone)]
-struct OptionTemplate {
+pub struct OptionTemplate {
     flowset_id: u16,
     length: u16,
     template_id: u16,
@@ -23,7 +23,7 @@ struct OptionTemplate {
 }
 
 #[derive(Debug, Clone)]
-struct DataFlow {
+pub struct DataFlow {
     flowset_id: u16,
     length: u16,
     records: Vec<u16>,
