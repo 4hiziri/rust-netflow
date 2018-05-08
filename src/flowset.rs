@@ -43,6 +43,7 @@ pub struct DataFlow {
 
 pub trait FlowSet {}
 
+// TODO: abstract with Netflow struct
 pub struct Netflow9 {
     version: u16,
     count: u16,
@@ -50,5 +51,5 @@ pub struct Netflow9 {
     timestamp: u32,
     flow_sequence: u32,
     flowset_id: u32,
-    flow_sets: Vec<Box<FlowSet>>,
+    flow_sets: Vec<u8>,
 }
