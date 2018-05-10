@@ -57,7 +57,6 @@ fn to_u32(bytes: &[u8]) -> u32 {
 
 // parser
 named!(netflow_version <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflow9_version <&[u8], u16>, map!(take!(2), to_u16)); // branching?
 named!(netflow9_count <&[u8], u16>, map!(take!(2), to_u16));
 named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(2), to_u32));
 named!(netflow9_timestamp <&[u8], u32>, map!(take!(2), to_u32));
@@ -86,7 +85,9 @@ impl NetFlow9 {
         let (payload, version) = netflow_version(payload).unwrap();
         if version == 9 {
             let (payload, count) = netflow9_count(payload).unwrap();
+            debug!("payload after count: {:?}", payload);
             let (payload, sys_uptime) = netflow9_sys_uptime(payload).unwrap();
+            debug!("payload after sys_uptime: {:?}", payload);
             let (payload, timestamp) = netflow9_timestamp(payload).unwrap();
             let (payload, flow_sequence) = netflow9_flow_sequence(payload).unwrap();
             let (payload, flowset_id) = netflow9_flowset_id(payload).unwrap();
