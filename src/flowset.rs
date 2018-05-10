@@ -82,5 +82,8 @@ pub struct NetFlow9 {
 
 // TODO: use nom to parse payload?
 impl NetFlow9 {
-    pub fn new(payload: &[u8]) {}
+    pub fn new(payload: &[u8]) {
+        let (payload, ver) = netflow_version(payload).unwrap();
+        println!("Netflow version: {}", ver);
+    }
 }
