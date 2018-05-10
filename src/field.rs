@@ -85,13 +85,13 @@ pub mod OptionTypes {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Field {
+pub struct NetFlowField {
     field_type: FieldType,
     length: u16,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Option {
+pub struct NetFlowOption {
     option_type: OptionType,
     length: u16,
 }
