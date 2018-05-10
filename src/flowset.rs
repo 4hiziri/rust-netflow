@@ -69,6 +69,7 @@ pub fn get_version(payload: &[u8]) -> u16 {
 }
 
 // TODO: abstract with Netflow struct
+#[derive(Debug)]
 pub struct NetFlow9 {
     version: u16,
     count: u16,
