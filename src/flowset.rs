@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
 use field::{Field, Option};
+use nom;
+use byteorder::{BigEndian, ReadBytesExt};
 
 #[derive(Debug, Clone)]
 pub struct DataTemplate {
@@ -43,6 +45,26 @@ pub struct DataFlow {
 // TODO: need?
 pub trait FlowSet {}
 
+fn to_u16(bytes: &[u8]) -> u16 {
+    let mut buf = &bytes[..];
+    buf.read_u16::<BigEndian>().unwrap()
+}
+
+fn to_u32(bytes: &[u8]) -> u32 {
+    let mut buf = &bytes[..];
+    buf.read_u32::<BigEndian>().unwrap()
+}
+
+// parser
+named!(netflow_version <&[u8], u16>, map!(take!(2), to_u16));
+named!(netflow9_version <&[u8], u16>, map!(take!(2), to_u16)); // branching?
+named!(netflow9_count <&[u8], u16>, map!(take!(2), to_u16));
+named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(2), to_u32));
+named!(netflow9_timestamp <&[u8], u32>, map!(take!(2), to_u32));
+named!(netflow9_flow_sequence <&[u8], u32>, map!(take!(2), to_u32));
+named!(netflow9_flowset_id <&[u8], u32>, map!(take!(2), to_u32));
+// TODO: impl flowset parsers later
+
 pub fn get_version(payload: &[u8]) -> u16 {
     (payload[0] as u16) << 8 + payload[1] as u16
 }
@@ -51,7 +73,7 @@ pub fn get_version(payload: &[u8]) -> u16 {
 pub struct NetFlow9 {
     version: u16,
     count: u16,
-    sys_up_time: u32,
+    sys_uptime: u32,
     timestamp: u32,
     flow_sequence: u32,
     flowset_id: u32,
