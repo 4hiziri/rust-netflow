@@ -58,10 +58,10 @@ fn to_u32(bytes: &[u8]) -> u32 {
 // parser
 named!(netflow_version <&[u8], u16>, map!(take!(2), to_u16));
 named!(netflow9_count <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(2), to_u32));
-named!(netflow9_timestamp <&[u8], u32>, map!(take!(2), to_u32));
-named!(netflow9_flow_sequence <&[u8], u32>, map!(take!(2), to_u32));
-named!(netflow9_flowset_id <&[u8], u32>, map!(take!(2), to_u32));
+named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(4), to_u32));
+named!(netflow9_timestamp <&[u8], u32>, map!(take!(4), to_u32));
+named!(netflow9_flow_sequence <&[u8], u32>, map!(take!(4), to_u32));
+named!(netflow9_flowset_id <&[u8], u32>, map!(take!(4), to_u32));
 // TODO: impl flowset parsers later
 
 pub fn get_version(payload: &[u8]) -> u16 {
