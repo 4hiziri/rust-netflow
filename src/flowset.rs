@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use field::{Field, Option};
-use std::boxed::Box;
 
 #[derive(Debug, Clone)]
 pub struct DataTemplate {
@@ -41,10 +40,15 @@ pub struct DataFlow {
     records: Vec<u16>,
 }
 
+// TODO: need?
 pub trait FlowSet {}
 
+pub fn get_version(payload: &[u8]) -> u16 {
+    (payload[0] as u16) << 8 + payload[1] as u16
+}
+
 // TODO: abstract with Netflow struct
-pub struct Netflow9 {
+pub struct NetFlow9 {
     version: u16,
     count: u16,
     sys_up_time: u32,
@@ -52,4 +56,9 @@ pub struct Netflow9 {
     flow_sequence: u32,
     flowset_id: u32,
     flow_sets: Vec<u8>,
+}
+
+// TODO: use nom to parse payload?
+impl NetFlow9 {
+    pub fn new(payload: &[u8]) {}
 }
