@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, Copy)]
 pub struct FieldType(u16);
+
 #[derive(Debug, Clone, Copy)]
 pub struct OptionType(u16);
 
@@ -84,10 +85,20 @@ pub mod OptionTypes {
     pub const Template: OptionType = OptionType(5);
 }
 
+// TODO: extract parser to another module?
 #[derive(Debug, Clone, Copy)]
 pub struct NetFlowField {
     field_type: FieldType,
     length: u16,
+}
+
+impl NetFlowField {
+    pub fn new(field_type: u16, length: u16) -> NetFlowField {
+        NetFlowField {
+            field_type: FieldType(field_type),
+            length: length,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
