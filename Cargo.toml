@@ -7,3 +7,4 @@ authors = ["tkgsy <meirvg@gmail.com>"]
 nom = "^3.2"
 byteorder = "1.2.2"
 log = "0.4"
+env_logger = ""
