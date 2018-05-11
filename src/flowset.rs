@@ -26,8 +26,13 @@ pub struct DataTemplate {
     fields: Vec<NetFlowField>,
 }
 
+fn parse_netflowfield(data: &[u8]) -> NetFlowField {
+    NetFlowField::new(to_u16(&data[0..1]), to_u16(&data[2..3]))
+}
+
 named!(template_id <&[u8], u16>, map!(take!(2), to_u16));
 named!(template_field_count <&[u8], u16>, map!(take!(2), to_u16));
+named!(netflowfield <&[u8], NetFlowField>, map!(take!(4), parse_netflowfield));
 
 impl DataTemplate {
     pub fn new(data: &[u8]) -> Option<DataTemplate> {
@@ -42,7 +47,7 @@ impl DataTemplate {
                 length: flowset_length,
                 template_id: template_id,
                 field_count: template_field_count,
-                fields: Vec::<NetFlowField>::new(),
+                fields: Vec::<NetFlowField>::new(), // TODO: Add parser impl
             })
         } else {
             None
