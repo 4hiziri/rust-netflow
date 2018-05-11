@@ -106,3 +106,12 @@ pub struct NetFlowOption {
     option_type: OptionType,
     length: u16,
 }
+
+impl NetFlowOption {
+    pub fn new(option_type: u16, length: u16) -> NetFlowOption {
+        NetFlowOption {
+            option_type: OptionType(option_type),
+            length: length,
+        }
+    }
+}

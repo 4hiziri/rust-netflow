@@ -59,7 +59,7 @@ impl NetFlow9 {
             let (payload, timestamp) = netflow9_timestamp(payload).unwrap();
             let (payload, flow_sequence) = netflow9_flow_sequence(payload).unwrap();
             let (payload, source_id) = netflow9_source_id(payload).unwrap();
-            let flow_sets = NetFlow9::parse_flowsets(payload).unwrap(); // parse?
+            let flow_sets = NetFlow9::parse_flowsets(payload).unwrap();
 
             Some(NetFlow9 {
                 version: version,
@@ -174,6 +174,24 @@ pub struct OptionTemplate {
     option_length: u16,
     options: Vec<NetFlowOption>,
 }
+
+fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowOption>), ()> {
+    // TODO: define Error type
+    let mut rest = data;
+    let mut field_vec = Vec::with_capacity(count as usize);
+
+    for _ in 0..count {
+        let (next, field_vals) = netflowfield(&rest).unwrap();
+        field_vec.push(NetFlowOption::new(field_vals[0], field_vals[1]));
+        rest = next;
+    }
+
+    Ok((rest, field_vec))
+}
+
+named!(option_scope_length <&[u8], u16>, map!(take!(2), to_u16));
+named!(option_length <&[u8], u16>, map!(take!(2), to_u16));
+named!(netflowoption <&[u8], Vec<u16>>, count!(map!(take!(2), to_u16), 2)); // TODO: extract parsers?
 
 impl OptionTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
