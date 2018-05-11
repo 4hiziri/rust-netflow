@@ -125,8 +125,8 @@ fn parse_netflowfield(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowFi
     let mut field_vec = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
-        let (next, field_vals) = netflowfield(&rest).unwrap();
-        field_vec.push(NetFlowField::new(field_vals[0], field_vals[1]));
+        let (next, field) = netflowfield(&rest).unwrap();
+        field_vec.push(field);
         rest = next;
     }
 
@@ -135,7 +135,8 @@ fn parse_netflowfield(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowFi
 
 named!(template_id <&[u8], u16>, map!(take!(2), to_u16));
 named!(template_field_count <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflowfield <&[u8], Vec<u16>>, count!(map!(take!(2), to_u16), 2)); // TODO: extract parsers?
+named!(netflowfield <&[u8], NetFlowField>, map!(count!(map!(take!(2), to_u16), 2),
+                                                |v: Vec<u16>| NetFlowField::new(v[0], v[1])));
 
 impl DataTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
@@ -165,6 +166,7 @@ impl DataTemplate {
     }
 }
 
+// FIXME:
 #[derive(Debug)]
 pub struct OptionTemplate {
     flowset_id: u16,
@@ -181,8 +183,8 @@ fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowO
     let mut field_vec = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
-        let (next, field_vals) = netflowfield(&rest).unwrap();
-        field_vec.push(NetFlowOption::new(field_vals[0], field_vals[1]));
+        let (next, option) = netflowoption(&rest).unwrap();
+        field_vec.push(option);
         rest = next;
     }
 
@@ -191,7 +193,8 @@ fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowO
 
 named!(option_scope_length <&[u8], u16>, map!(take!(2), to_u16));
 named!(option_length <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflowoption <&[u8], Vec<u16>>, count!(map!(take!(2), to_u16), 2)); // TODO: extract parsers?
+named!(netflowoption <&[u8], NetFlowOption>, map!(count!(map!(take!(2), to_u16), 2),
+                                                |v: Vec<u16>| NetFlowOption::new(v[0], v[1])));
 
 impl OptionTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
