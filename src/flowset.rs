@@ -1,8 +1,21 @@
 #![allow(dead_code)]
-
 use field::{NetFlowField, NetFlowOption};
-use nom;
 use byteorder::{BigEndian, ReadBytesExt};
+
+fn to_u16(bytes: &[u8]) -> u16 {
+    let mut buf = &bytes[..];
+    buf.read_u16::<BigEndian>().unwrap()
+}
+
+fn to_u32(bytes: &[u8]) -> u32 {
+    let mut buf = &bytes[..];
+    buf.read_u32::<BigEndian>().unwrap()
+}
+
+const TEMPLATE_FLOWSET_ID: u16 = 0;
+
+named!(flowset_id <&[u8], u16>, map!(take!(2), to_u16));
+named!(flowset_length <&[u8], u16>, map!(take!(2), to_u16));
 
 #[derive(Debug, Clone)]
 pub struct DataTemplate {
@@ -13,14 +26,26 @@ pub struct DataTemplate {
     fields: Vec<NetFlowField>,
 }
 
+named!(template_id <&[u8], u16>, map!(take!(2), to_u16));
+named!(template_field_count <&[u8], u16>, map!(take!(2), to_u16));
+
 impl DataTemplate {
-    pub fn new() -> DataTemplate {
-        DataTemplate {
-            flowset_id: 0,
-            length: 0,
-            template_id: 0,
-            field_count: 0,
-            fields: Vec::new(),
+    pub fn new(data: &[u8]) -> Option<DataTemplate> {
+        let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let (rest, flowset_length) = flowset_length(&rest).unwrap();
+        let (rest, template_id) = template_id(&rest).unwrap();
+        let (_rest, template_field_count) = template_field_count(&rest).unwrap();
+
+        if flowset_id == TEMPLATE_FLOWSET_ID {
+            Some(DataTemplate {
+                flowset_id: flowset_id,
+                length: flowset_length,
+                template_id: template_id,
+                field_count: template_field_count,
+                fields: Vec::<NetFlowField>::new(),
+            })
+        } else {
+            None
         }
     }
 }
@@ -45,28 +70,14 @@ pub struct DataFlow {
 // TODO: need?
 pub trait FlowSet {}
 
-fn to_u16(bytes: &[u8]) -> u16 {
-    let mut buf = &bytes[..];
-    buf.read_u16::<BigEndian>().unwrap()
-}
-
-fn to_u32(bytes: &[u8]) -> u32 {
-    let mut buf = &bytes[..];
-    buf.read_u32::<BigEndian>().unwrap()
-}
-
 // parser
 named!(netflow_version <&[u8], u16>, map!(take!(2), to_u16));
 named!(netflow9_count <&[u8], u16>, map!(take!(2), to_u16));
 named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(4), to_u32));
 named!(netflow9_timestamp <&[u8], u32>, map!(take!(4), to_u32));
 named!(netflow9_flow_sequence <&[u8], u32>, map!(take!(4), to_u32));
-named!(netflow9_flowset_id <&[u8], u32>, map!(take!(4), to_u32));
+named!(netflow9_source_id <&[u8], u32>, map!(take!(4), to_u32));
 // TODO: impl flowset parsers later
-
-pub fn get_version(payload: &[u8]) -> u16 {
-    (payload[0] as u16) << 8 + payload[1] as u16
-}
 
 // TODO: abstract with Netflow struct
 #[derive(Debug)]
@@ -76,7 +87,7 @@ pub struct NetFlow9 {
     sys_uptime: u32,
     timestamp: u32,
     flow_sequence: u32,
-    flowset_id: u32,
+    source_id: u32,
     flow_sets: Vec<u8>,
 }
 
@@ -91,7 +102,7 @@ impl NetFlow9 {
             debug!("payload after sys_uptime: {:?}", payload);
             let (payload, timestamp) = netflow9_timestamp(payload).unwrap();
             let (payload, flow_sequence) = netflow9_flow_sequence(payload).unwrap();
-            let (payload, flowset_id) = netflow9_flowset_id(payload).unwrap();
+            let (payload, source_id) = netflow9_source_id(payload).unwrap();
             let flow_sets = payload;
 
             Some(NetFlow9 {
@@ -100,7 +111,7 @@ impl NetFlow9 {
                 sys_uptime: sys_uptime,
                 timestamp: timestamp,
                 flow_sequence: flow_sequence,
-                flowset_id: flowset_id,
+                source_id: source_id,
                 flow_sets: flow_sets.to_vec(),
             })
         } else {
