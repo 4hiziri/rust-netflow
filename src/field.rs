@@ -1,3 +1,5 @@
+// TODO: from_str and compare(?)
+
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
     pub type_val: u16,
