@@ -1,21 +1,13 @@
 #![allow(dead_code)]
 use field::{NetFlowField, NetFlowOption};
-use byteorder::{BigEndian, ReadBytesExt};
+use nom;
+use nom::{be_u16, be_u32};
 
 // Netflow(1|5|9|..) -> flowset(Template|Option|Data)+
 
-fn to_u16(bytes: &[u8]) -> u16 {
-    let mut buf = &bytes[..];
-    buf.read_u16::<BigEndian>().unwrap()
-}
-
-fn to_u32(bytes: &[u8]) -> u32 {
-    let mut buf = &bytes[..];
-    buf.read_u32::<BigEndian>().unwrap()
-}
-
 // parser
-named!(netflow_version <&[u8], u16>, map!(take!(2), to_u16));
+named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+
 // TODO: impl flowset parsers later
 // TODO: enum NetFlow
 // TODO: abstract with Netflow struct
@@ -30,11 +22,11 @@ pub struct NetFlow9 {
     flow_sets: Vec<FlowSet>,
 }
 
-named!(netflow9_count <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflow9_sys_uptime <&[u8], u32>, map!(take!(4), to_u32));
-named!(netflow9_timestamp <&[u8], u32>, map!(take!(4), to_u32));
-named!(netflow9_flow_sequence <&[u8], u32>, map!(take!(4), to_u32));
-named!(netflow9_source_id <&[u8], u32>, map!(take!(4), to_u32));
+named!(netflow9_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(netflow9_sys_uptime <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
+named!(netflow9_timestamp <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
+named!(netflow9_flow_sequence <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
+named!(netflow9_source_id <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
 
 // TODO: use nom to parse payload?
 impl NetFlow9 {
@@ -53,6 +45,8 @@ impl NetFlow9 {
 
     pub fn new(payload: &[u8]) -> Option<NetFlow9> {
         let (payload, version) = netflow_version(payload).unwrap();
+        let version = version.unwrap().1;
+
         if version == 9 {
             let (payload, count) = netflow9_count(payload).unwrap();
             let (payload, sys_uptime) = netflow9_sys_uptime(payload).unwrap();
@@ -63,11 +57,11 @@ impl NetFlow9 {
 
             Some(NetFlow9 {
                 version: version,
-                count: count,
-                sys_uptime: sys_uptime,
-                timestamp: timestamp,
-                flow_sequence: flow_sequence,
-                source_id: source_id,
+                count: count.unwrap().1,
+                sys_uptime: sys_uptime.unwrap().1,
+                timestamp: timestamp.unwrap().1,
+                flow_sequence: flow_sequence.unwrap().1,
+                source_id: source_id.unwrap().1,
                 flow_sets: flow_sets,
             })
         } else {
@@ -83,8 +77,8 @@ enum FlowSet {
     DataFlow(DataFlow),
 }
 
-named!(flowset_id <&[u8], u16>, map!(take!(2), to_u16));
-named!(flowset_length <&[u8], u16>, map!(take!(2), to_u16));
+named!(flowset_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(flowset_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 
 const TEMPLATE_FLOWSET_ID: u16 = 0;
 const OPTION_FLOWSET_ID: u16 = 1;
@@ -93,7 +87,7 @@ impl FlowSet {
     fn from_slice(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
 
-        match id {
+        match id.unwrap().1 {
             TEMPLATE_FLOWSET_ID => {
                 let (next, template) = DataTemplate::from_slice(&data).unwrap(); // TODO: use combinator
                 Ok((next, FlowSet::DataTemplate(template)))
@@ -110,6 +104,7 @@ impl FlowSet {
     }
 }
 
+// TODO: need mut?
 #[derive(Debug)]
 pub struct DataTemplate {
     pub flowset_id: u16,
@@ -133,18 +128,35 @@ fn parse_netflowfield(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowFi
     Ok((rest, field_vec))
 }
 
-named!(template_id <&[u8], u16>, map!(take!(2), to_u16));
-named!(template_field_count <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflowfield <&[u8], NetFlowField>, map!(count!(map!(take!(2), to_u16), 2),
-                                                |v: Vec<u16>| NetFlowField::new(v[0], v[1])));
+named!(template_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(template_field_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(netflowfield <&[u8], NetFlowField>, map!(count!(map!(take!(2), be_u16), 2),
+                                                |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
 
 impl DataTemplate {
+    pub fn new(
+        length: u16,
+        template_id: u16,
+        field_count: u16,
+        fields: Vec<NetFlowField>,
+    ) -> DataTemplate {
+        DataTemplate {
+            flowset_id: 0, // DataTemplate's flowset_id is 0
+            length: length,
+            template_id: template_id,
+            field_count: field_count,
+            fields: fields,
+        }
+    }
+
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
         // TODO: define Error type
         let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let flowset_id = flowset_id.unwrap().1;
         let (rest, flowset_length) = flowset_length(&rest).unwrap();
         let (rest, template_id) = template_id(&rest).unwrap();
         let (rest, template_field_count) = template_field_count(&rest).unwrap();
+        let template_field_count = template_field_count.unwrap().1;
         let (rest, field_vec): (&[u8], Vec<NetFlowField>) =
             parse_netflowfield(template_field_count as usize, &rest).unwrap();
 
@@ -154,8 +166,8 @@ impl DataTemplate {
                 rest,
                 DataTemplate {
                     flowset_id: flowset_id,
-                    length: flowset_length,
-                    template_id: template_id,
+                    length: flowset_length.unwrap().1,
+                    template_id: template_id.unwrap().1,
                     field_count: template_field_count,
                     fields: field_vec,
                 },
@@ -191,14 +203,15 @@ fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowO
     Ok((rest, field_vec))
 }
 
-named!(option_scope_length <&[u8], u16>, map!(take!(2), to_u16));
-named!(option_length <&[u8], u16>, map!(take!(2), to_u16));
-named!(netflowoption <&[u8], NetFlowOption>, map!(count!(map!(take!(2), to_u16), 2),
-                                                |v: Vec<u16>| NetFlowOption::new(v[0], v[1])));
+named!(option_scope_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(option_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(netflowoption <&[u8], NetFlowOption>, map!(count!(map!(take!(2), be_u16), 2),
+                                                  |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
 
 impl OptionTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
         let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let flowset_id = flowset_id.unwrap().1;
         let (rest, length) = flowset_length(&rest).unwrap();
         let (rest, template_id) = template_id(&rest).unwrap();
 
@@ -207,8 +220,8 @@ impl OptionTemplate {
                 rest,
                 OptionTemplate {
                     flowset_id: flowset_id,
-                    length: length,
-                    template_id: template_id,
+                    length: length.unwrap().1,
+                    template_id: template_id.unwrap().1,
                     option_scope_length: 0,
                     option_length: 0,
                     options: Vec::<NetFlowOption>::new(),
@@ -232,7 +245,7 @@ impl DataFlow {
         let (_rest, flowset_id) = flowset_id(&data).unwrap();
 
         (DataFlow {
-             flowset_id: flowset_id,
+             flowset_id: flowset_id.unwrap().1,
              length: 0,
              records: Vec::<u16>::new(), // TODO: parser
          });
