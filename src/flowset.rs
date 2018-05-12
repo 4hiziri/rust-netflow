@@ -7,7 +7,6 @@ use nom::{be_u16, be_u32};
 
 // Netflow(1|5|9|..) -> flowset(Template|Option|Data)+
 
-// parser
 named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 
 // TODO: impl flowset parsers later
@@ -274,12 +273,15 @@ pub struct DataFlow {
 impl DataFlow {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
         let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let (rest, length) = flowset_length(&rest).unwrap();
+        let length = length.unwrap().1;
+        let rest = &rest[(length as usize - 4)..];
 
         Ok((
             rest,
             DataFlow {
                 flowset_id: flowset_id.unwrap().1,
-                length: 0,
+                length: length,
                 records: Vec::<u16>::new(), // TODO: parser
             },
         ))
