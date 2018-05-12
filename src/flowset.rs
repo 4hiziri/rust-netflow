@@ -89,7 +89,7 @@ impl FlowSet {
     fn from_slice(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
         let id = id.unwrap().1;
-        debug!("FlowSet parses id: {}", id);
+        debug!("parsed flowset id: {}", id);
 
         match id {
             TEMPLATE_FLOWSET_ID => {
