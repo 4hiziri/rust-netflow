@@ -7,3 +7,6 @@ extern crate byteorder;
 
 pub mod field;
 pub mod flowset;
+
+#[cfg(test)]
+mod flowset_tests;
