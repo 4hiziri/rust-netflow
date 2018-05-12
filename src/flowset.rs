@@ -14,13 +14,13 @@ named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16)
 // TODO: abstract with Netflow struct
 #[derive(Debug)]
 pub struct NetFlow9 {
-    version: u16,
-    count: u16,
-    sys_uptime: u32,
-    timestamp: u32,
-    flow_sequence: u32,
-    source_id: u32,
-    flow_sets: Vec<FlowSet>,
+    pub version: u16,
+    pub count: u16,
+    pub sys_uptime: u32,
+    pub timestamp: u32,
+    pub flow_sequence: u32,
+    pub source_id: u32,
+    pub flow_sets: Vec<FlowSet>,
 }
 
 named!(netflow9_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
