@@ -242,15 +242,16 @@ pub struct DataFlow {
 
 impl DataFlow {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
-        let (_rest, flowset_id) = flowset_id(&data).unwrap();
+        let (rest, flowset_id) = flowset_id(&data).unwrap();
 
-        (DataFlow {
-             flowset_id: flowset_id.unwrap().1,
-             length: 0,
-             records: Vec::<u16>::new(), // TODO: parser
-         });
-
-        Err(())
+        Ok((
+            rest,
+            DataFlow {
+                flowset_id: flowset_id.unwrap().1,
+                length: 0,
+                records: Vec::<u16>::new(), // TODO: parser
+            },
+        ))
     }
 }
 
