@@ -72,7 +72,7 @@ impl NetFlow9 {
 }
 
 #[derive(Debug)]
-enum FlowSet {
+pub enum FlowSet {
     DataTemplate(DataTemplate),
     OptionTemplate(OptionTemplate),
     DataFlow(DataFlow),
