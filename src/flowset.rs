@@ -130,8 +130,8 @@ fn parse_netflowfield(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowFi
 
 named!(template_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 named!(template_field_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(netflowfield <&[u8], NetFlowField>, map!(count!(map!(take!(2), be_u16), 2),
-                                                |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
+named!(netflowfield <&[u8], NetFlowField>, dbg!(map!(count!(map!(take!(2), be_u16), 2),
+                                                     |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
 
 impl DataTemplate {
     pub fn new(
