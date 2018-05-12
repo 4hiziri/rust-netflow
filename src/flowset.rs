@@ -267,7 +267,7 @@ impl OptionTemplate {
 pub struct DataFlow {
     flowset_id: u16,
     length: u16,
-    records: Vec<u16>,
+    records: Vec<u8>,
 }
 
 impl DataFlow {
@@ -275,6 +275,7 @@ impl DataFlow {
         let (rest, flowset_id) = flowset_id(&data).unwrap();
         let (rest, length) = flowset_length(&rest).unwrap();
         let length = length.unwrap().1;
+        let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
 
         Ok((
@@ -282,7 +283,7 @@ impl DataFlow {
             DataFlow {
                 flowset_id: flowset_id.unwrap().1,
                 length: length,
-                records: Vec::<u16>::new(), // TODO: parser
+                records: record_bytes.to_vec(),
             },
         ))
     }
