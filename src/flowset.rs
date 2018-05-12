@@ -89,19 +89,22 @@ impl FlowSet {
     fn from_slice(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
         let id = id.unwrap().1;
-        debug!("parsed flowset id: {}", id);
+        info!("parsed flowset id: {:?}", id);
 
         match id {
             TEMPLATE_FLOWSET_ID => {
                 let (next, template) = DataTemplate::from_slice(&data).unwrap(); // TODO: use combinator
+                debug!("parsed DataTemplate: {:?}", template);
                 Ok((next, FlowSet::DataTemplate(template)))
             }
             OPTION_FLOWSET_ID => {
                 let (next, option) = OptionTemplate::from_slice(&data).unwrap();
+                debug!("parsed OptionTemplate: {:?}", option);
                 Ok((next, FlowSet::OptionTemplate(option)))
             }
             _ => {
                 let (next, flow) = DataFlow::from_slice(&data).unwrap();
+                debug!("parsed DataFlow: {:?}", flow);
                 Ok((next, FlowSet::DataFlow(flow)))
             }
         }
