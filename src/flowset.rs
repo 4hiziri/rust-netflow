@@ -1,7 +1,9 @@
 #![allow(dead_code)]
-use field::{NetFlowField, NetFlowOption};
+use field::{NetFlowField, NetFlowOption, NetFlowScope};
 use nom;
 use nom::{be_u16, be_u32};
+
+// FIXME: skip padding while parsing
 
 // Netflow(1|5|9|..) -> flowset(Template|Option|Data)+
 
@@ -186,6 +188,7 @@ pub struct OptionTemplate {
     template_id: u16,
     option_scope_length: u16,
     option_length: u16,
+    scopes: Vec<NetFlowScope>,
     options: Vec<NetFlowOption>,
 }
 
@@ -205,26 +208,49 @@ fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowO
 
 named!(option_scope_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 named!(option_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(netflowscope <&[u8], NetFlowScope>, map!(count!(map!(take!(2), be_u16), 2),
+                                                  |v: Vec<_>| NetFlowScope::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
 named!(netflowoption <&[u8], NetFlowOption>, map!(count!(map!(take!(2), be_u16), 2),
-                                                  |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
+                                                  |v: Vec<_>| NetFlowOption::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
 
 impl OptionTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
         let (rest, flowset_id) = flowset_id(&data).unwrap();
         let flowset_id = flowset_id.unwrap().1;
-        let (rest, length) = flowset_length(&rest).unwrap();
-        let (rest, template_id) = template_id(&rest).unwrap();
 
         if flowset_id == OPTION_FLOWSET_ID {
+            let (rest, length) = flowset_length(&rest).unwrap();
+            let (rest, template_id) = template_id(&rest).unwrap();
+            let (rest, scope_len) = option_scope_length(&rest).unwrap();
+            let scope_len = scope_len.unwrap().1;
+            let (rest, option_len) = option_length(&rest).unwrap();
+            let option_len = option_len.unwrap().1;
+            let mut scopes = Vec::<NetFlowScope>::with_capacity((scope_len / 4) as usize);
+            let mut options = Vec::<NetFlowOption>::with_capacity((option_len / 4) as usize);
+
+            let mut rest = rest;
+            for _ in 0..(scope_len / 4) {
+                let (next, scope) = netflowscope(rest).unwrap();
+                scopes.push(scope);
+                rest = next;
+            }
+
+            for _ in 0..(option_len / 4) {
+                let (next, option) = netflowoption(rest).unwrap();
+                options.push(option);
+                rest = next;
+            }
+
             Ok((
                 rest,
                 OptionTemplate {
                     flowset_id: flowset_id,
                     length: length.unwrap().1,
                     template_id: template_id.unwrap().1,
-                    option_scope_length: 0,
-                    option_length: 0,
-                    options: Vec::<NetFlowOption>::new(),
+                    option_scope_length: scope_len,
+                    option_length: option_len,
+                    scopes: scopes,
+                    options: options,
                 },
             ))
         } else {
@@ -258,11 +284,9 @@ impl DataFlow {
 #[cfg(test)]
 mod flowset_tests {
     use super::*;
-    use env_logger;
 
     #[test]
-    fn test_datatemplate() {
-        let _logger = env_logger::init();
+    fn test_data_template() {
         let data_template_payload: Vec<u8> = vec![
             0x00,
             0x00,
@@ -378,5 +402,59 @@ mod flowset_tests {
             "Datatemplate has wrong field_count."
         );
         // TODO: Field test
+    }
+
+    #[test]
+    fn test_option_template() {
+        let packet_bytes = vec![
+            0x00,
+            0x01,
+            0x00,
+            0x1a,
+            0x10,
+            0x00,
+            0x00,
+            0x04,
+            0x00,
+            0x0c,
+            0x00,
+            0x01,
+            0x00,
+            0x04,
+            0x00,
+            0x30,
+            0x00,
+            0x01,
+            0x00,
+            0x31,
+            0x00,
+            0x01,
+            0x00,
+            0x32,
+            0x00,
+            0x04,
+        ];
+
+        let option: Result<(&[u8], OptionTemplate), ()> = OptionTemplate::from_slice(&packet_bytes);
+        assert!(option.is_ok());
+
+        let (_rest, option): (&[u8], OptionTemplate) = option.unwrap();
+        assert_eq!(option.flowset_id, 1, "wrong OptionTemplate.flowset_id.");
+        assert_eq!(option.length, 26, "wrong OptionTemplate.length.");
+        assert_eq!(
+            option.template_id,
+            4096,
+            "wrong OptionTemplate.template_id."
+        );
+        assert_eq!(
+            option.option_scope_length,
+            4,
+            "wrong OptionTemplate.option_scope_length."
+        );
+        assert_eq!(
+            option.option_length,
+            12,
+            "wrong Optiontemplate.option_length."
+        );
     }
 }
