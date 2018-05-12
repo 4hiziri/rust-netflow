@@ -88,8 +88,10 @@ const OPTION_FLOWSET_ID: u16 = 1;
 impl FlowSet {
     fn from_slice(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
+        let id = id.unwrap().1;
+        debug!("FlowSet parses id: {}", id);
 
-        match id.unwrap().1 {
+        match id {
             TEMPLATE_FLOWSET_ID => {
                 let (next, template) = DataTemplate::from_slice(&data).unwrap(); // TODO: use combinator
                 Ok((next, FlowSet::DataTemplate(template)))
