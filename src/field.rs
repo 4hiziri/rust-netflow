@@ -1,5 +1,11 @@
 // TODO: from_str and compare(?)
 
+use nom::be_u16;
+
+named!(netflowfield <&[u8], NetFlowField>,
+       dbg!(map!(count!(map!(take!(2), be_u16), 2),
+                 |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
+
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
     pub type_val: u16,
@@ -12,6 +18,20 @@ impl TypeLengthField {
             type_val: type_val,
             length: length,
         }
+    }
+
+    pub fn take_from(count: usize, data: &[u8]) -> Result<(&[u8], Vec<TypeLengthField>), ()> {
+        // TODO: define Error type
+        let mut rest = data;
+        let mut field_vec = Vec::with_capacity(count as usize);
+
+        for _ in 0..count {
+            let (next, field) = netflowfield(&rest).unwrap();
+            field_vec.push(field);
+            rest = next;
+        }
+
+        Ok((rest, field_vec))
     }
 }
 
@@ -93,6 +113,6 @@ pub mod ScopeTypes {
 }
 
 // TODO: extract parser to another module?
-pub type NetFlowField = TypeLengthField;
-pub type NetFlowOption = TypeLengthField;
-pub type NetFlowScope = TypeLengthField;
+pub type NetFlowField = TypeLengthField; // Field of DataTemplate
+pub type NetFlowOption = TypeLengthField; // Field of OptionTemplate
+pub type NetFlowScope = TypeLengthField; // Field of OptionScope

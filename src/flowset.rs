@@ -4,14 +4,14 @@ use nom;
 use nom::{be_u16, be_u32};
 
 // FIXME: skip padding while parsing
+// TODO: parser with template for DataFlow, use hashmap like object?
+// TODO: impl method struct into bytes
 
 // Netflow(1|5|9|..) -> flowset(Template|Option|Data)+
 
 named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 
-// TODO: impl flowset parsers later
-// TODO: enum NetFlow
-// TODO: abstract with Netflow struct
+// TODO: enum NetFlow or abstract with Netflow struct
 #[derive(Debug)]
 pub struct NetFlow9 {
     pub version: u16,
@@ -29,7 +29,6 @@ named!(netflow9_timestamp <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u
 named!(netflow9_flow_sequence <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
 named!(netflow9_source_id <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
 
-// TODO: use nom to parse payload?
 impl NetFlow9 {
     fn parse_flowsets(data: &[u8]) -> Result<Vec<FlowSet>, ()> {
         let mut rest: &[u8] = data;
@@ -120,24 +119,8 @@ pub struct DataTemplate {
     pub fields: Vec<NetFlowField>,
 }
 
-fn parse_netflowfield(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowField>), ()> {
-    // TODO: define Error type
-    let mut rest = data;
-    let mut field_vec = Vec::with_capacity(count as usize);
-
-    for _ in 0..count {
-        let (next, field) = netflowfield(&rest).unwrap();
-        field_vec.push(field);
-        rest = next;
-    }
-
-    Ok((rest, field_vec))
-}
-
 named!(template_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 named!(template_field_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(netflowfield <&[u8], NetFlowField>, dbg!(map!(count!(map!(take!(2), be_u16), 2),
-                                                     |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
 
 impl DataTemplate {
     pub fn new(
@@ -164,7 +147,7 @@ impl DataTemplate {
         let (rest, template_field_count) = template_field_count(&rest).unwrap();
         let template_field_count = template_field_count.unwrap().1;
         let (rest, field_vec): (&[u8], Vec<NetFlowField>) =
-            parse_netflowfield(template_field_count as usize, &rest).unwrap();
+            NetFlowField::take_from(template_field_count as usize, &rest).unwrap();
 
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
@@ -196,26 +179,8 @@ pub struct OptionTemplate {
     pub options: Vec<NetFlowOption>,
 }
 
-fn parse_netflowoption(count: usize, data: &[u8]) -> Result<(&[u8], Vec<NetFlowOption>), ()> {
-    // TODO: define Error type
-    let mut rest = data;
-    let mut field_vec = Vec::with_capacity(count as usize);
-
-    for _ in 0..count {
-        let (next, option) = netflowoption(&rest).unwrap();
-        field_vec.push(option);
-        rest = next;
-    }
-
-    Ok((rest, field_vec))
-}
-
 named!(option_scope_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 named!(option_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(netflowscope <&[u8], NetFlowScope>, map!(count!(map!(take!(2), be_u16), 2),
-                                                  |v: Vec<_>| NetFlowScope::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
-named!(netflowoption <&[u8], NetFlowOption>, map!(count!(map!(take!(2), be_u16), 2),
-                                                  |v: Vec<_>| NetFlowOption::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1)));
 
 impl OptionTemplate {
     pub fn from_slice(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
@@ -229,21 +194,9 @@ impl OptionTemplate {
             let scope_len = scope_len.unwrap().1;
             let (rest, option_len) = option_length(&rest).unwrap();
             let option_len = option_len.unwrap().1;
-            let mut scopes = Vec::<NetFlowScope>::with_capacity((scope_len / 4) as usize);
-            let mut options = Vec::<NetFlowOption>::with_capacity((option_len / 4) as usize);
-
-            let mut rest = rest;
-            for _ in 0..(scope_len / 4) {
-                let (next, scope) = netflowscope(rest).unwrap();
-                scopes.push(scope);
-                rest = next;
-            }
-
-            for _ in 0..(option_len / 4) {
-                let (next, option) = netflowoption(rest).unwrap();
-                options.push(option);
-                rest = next;
-            }
+            let (rest, scopes) = NetFlowScope::take_from((scope_len / 4) as usize, rest).unwrap();
+            let (rest, options) = NetFlowOption::take_from((option_len / 4) as usize, rest)
+                .unwrap();
 
             Ok((
                 rest,
