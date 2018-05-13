@@ -1,3 +1,5 @@
+// TODO: impl converter for Field
+
 use nom::be_u16;
 
 named!(netflowfield <&[u8], NetFlowField>,
@@ -114,3 +116,8 @@ pub mod ScopeTypes {
 pub type NetFlowField = TypeLengthField; // Field of DataTemplate
 pub type NetFlowOption = TypeLengthField; // Field of OptionTemplate
 pub type NetFlowScope = TypeLengthField; // Field of OptionScope
+
+pub struct Field {
+    id: u16,
+    value: Vec<u8>,
+}
