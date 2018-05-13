@@ -1,11 +1,10 @@
-// TODO: from_str and compare(?)
-
 use nom::be_u16;
 
 named!(netflowfield <&[u8], NetFlowField>,
        dbg!(map!(count!(map!(take!(2), be_u16), 2),
                  |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
 
+// TODO: from_str and compare(?)
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
     pub type_val: u16,
@@ -112,7 +111,6 @@ pub mod ScopeTypes {
     pub const Template: u16 = 5;
 }
 
-// TODO: extract parser to another module?
 pub type NetFlowField = TypeLengthField; // Field of DataTemplate
 pub type NetFlowOption = TypeLengthField; // Field of OptionTemplate
 pub type NetFlowScope = TypeLengthField; // Field of OptionScope
