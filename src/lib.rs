@@ -9,4 +9,6 @@ pub mod field;
 pub mod flowset;
 
 #[cfg(test)]
+pub mod test_data;
+#[cfg(test)]
 mod flowset_tests;
