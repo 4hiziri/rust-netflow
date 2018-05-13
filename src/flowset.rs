@@ -16,7 +16,7 @@ named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16)
 pub struct NetFlow9 {
     pub version: u16,
     pub count: u16,
-    pub sys_uptime: u32,
+    pub sys_uptime: u32, // FIXME: replace proper type like time
     pub timestamp: u32,
     pub flow_sequence: u32,
     pub source_id: u32,
@@ -43,7 +43,7 @@ impl NetFlow9 {
         Ok(flowsets)
     }
 
-    pub fn from_bytes(payload: &[u8]) -> Option<NetFlow9> {
+    pub fn from_bytes(payload: &[u8]) -> Result<NetFlow9, ()> {
         let (payload, version) = netflow_version(payload).unwrap();
         let version = version.unwrap().1;
 
@@ -55,7 +55,7 @@ impl NetFlow9 {
             let (payload, source_id) = netflow9_source_id(payload).unwrap();
             let flow_sets = NetFlow9::parse_flowsets(payload).unwrap();
 
-            Some(NetFlow9 {
+            Ok(NetFlow9 {
                 version: version,
                 count: count.unwrap().1,
                 sys_uptime: sys_uptime.unwrap().1,
@@ -65,7 +65,7 @@ impl NetFlow9 {
                 flow_sets: flow_sets,
             })
         } else {
-            None
+            Err(())
         }
     }
 }
@@ -138,28 +138,39 @@ impl DataTemplate {
         }
     }
 
+    fn validate_length(field_count: u16, length: u16) -> bool {
+        2 + 2 + 2 + 2 + field_count * 4 == length
+    }
+
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
         // TODO: define Error type
         let (rest, flowset_id) = flowset_id(&data).unwrap();
         let flowset_id = flowset_id.unwrap().1;
         let (rest, flowset_length) = flowset_length(&rest).unwrap();
+        let flowset_length = flowset_length.unwrap().1;
         let (rest, template_id) = template_id(&rest).unwrap();
-        let (rest, template_field_count) = template_field_count(&rest).unwrap();
-        let template_field_count = template_field_count.unwrap().1;
+        let (rest, field_count) = template_field_count(&rest).unwrap();
+        let field_count = field_count.unwrap().1;
         let (rest, field_vec): (&[u8], Vec<NetFlowField>) =
-            NetFlowField::take_from(template_field_count as usize, &rest).unwrap();
+            NetFlowField::take_from(field_count as usize, &rest).unwrap();
 
+        if !DataTemplate::validate_length(field_count, flowset_length) {
+            debug!(
+                "DataTemplate length is wrong. 8 + {} * 4 != {}",
+                field_count,
+                flowset_length
+            );
+        }
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((
                 rest,
-                DataTemplate {
-                    flowset_id: flowset_id,
-                    length: flowset_length.unwrap().1,
-                    template_id: template_id.unwrap().1,
-                    field_count: template_field_count,
-                    fields: field_vec,
-                },
+                DataTemplate::new(
+                    flowset_length,
+                    template_id.unwrap().1,
+                    field_count,
+                    field_vec,
+                ),
             ))
         } else {
             Err(())
@@ -225,6 +236,8 @@ pub struct DataFlow {
 
 impl DataFlow {
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
+        debug!("Length of parsing data: {}", data.len());
+
         let (rest, flowset_id) = flowset_id(&data).unwrap();
         let (rest, length) = flowset_length(&rest).unwrap();
         let length = length.unwrap().1;
