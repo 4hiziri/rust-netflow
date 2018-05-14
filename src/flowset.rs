@@ -20,7 +20,7 @@ pub struct NetFlow9 {
     pub timestamp: u32,
     pub flow_sequence: u32,
     pub source_id: u32,
-    pub flow_sets: Vec<FlowSet>,
+    pub flow_sets: Vec<FlowSet>, // FIXME: DataTemplate -> OptionTemplate -> DataFlow
 }
 
 named!(netflow9_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
