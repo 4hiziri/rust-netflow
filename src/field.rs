@@ -113,6 +113,7 @@ pub mod ScopeTypes {
     pub const Template: u16 = 5;
 }
 
+// FIXME: all template use TypeLengthField, and make NetFlowFields real field
 pub type NetFlowField = TypeLengthField; // Field of DataTemplate
 pub type NetFlowOption = TypeLengthField; // Field of OptionTemplate
 pub type NetFlowScope = TypeLengthField; // Field of OptionScope
@@ -120,4 +121,5 @@ pub type NetFlowScope = TypeLengthField; // Field of OptionScope
 pub struct Field {
     id: u16,
     value: Vec<u8>,
+    is_byte_arrray: bool,
 }

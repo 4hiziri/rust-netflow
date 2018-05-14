@@ -243,6 +243,7 @@ impl DataFlow {
         let length = length.unwrap().1;
         let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
+        // TODO: need field parser for skipping padding
 
         Ok((
             rest,
