@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use field::{NetFlowField, NetFlowOption, NetFlowScope};
+use field::TypeLengthField;
 use nom;
 use nom::{be_u16, be_u32};
 
@@ -116,7 +116,7 @@ pub struct DataTemplate {
     pub length: u16,
     pub template_id: u16,
     pub field_count: u16,
-    pub fields: Vec<NetFlowField>,
+    pub fields: Vec<TypeLengthField>,
 }
 
 named!(template_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
@@ -127,7 +127,7 @@ impl DataTemplate {
         length: u16,
         template_id: u16,
         field_count: u16,
-        fields: Vec<NetFlowField>,
+        fields: Vec<TypeLengthField>,
     ) -> DataTemplate {
         DataTemplate {
             flowset_id: 0, // DataTemplate's flowset_id is 0
@@ -151,8 +151,8 @@ impl DataTemplate {
         let (rest, template_id) = template_id(&rest).unwrap();
         let (rest, field_count) = template_field_count(&rest).unwrap();
         let field_count = field_count.unwrap().1;
-        let (rest, field_vec): (&[u8], Vec<NetFlowField>) =
-            NetFlowField::take_from(field_count as usize, &rest).unwrap();
+        let (rest, field_vec): (&[u8], Vec<TypeLengthField>) =
+            TypeLengthField::take_from(field_count as usize, &rest).unwrap();
 
         if !DataTemplate::validate_length(field_count, flowset_length) {
             debug!(
@@ -186,8 +186,8 @@ pub struct OptionTemplate {
     pub template_id: u16,
     pub option_scope_length: u16,
     pub option_length: u16,
-    pub scopes: Vec<NetFlowScope>,
-    pub options: Vec<NetFlowOption>,
+    pub scopes: Vec<TypeLengthField>,
+    pub options: Vec<TypeLengthField>,
 }
 
 named!(option_scope_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
@@ -205,8 +205,9 @@ impl OptionTemplate {
             let scope_len = scope_len.unwrap().1;
             let (rest, option_len) = option_length(&rest).unwrap();
             let option_len = option_len.unwrap().1;
-            let (rest, scopes) = NetFlowScope::take_from((scope_len / 4) as usize, rest).unwrap();
-            let (rest, options) = NetFlowOption::take_from((option_len / 4) as usize, rest)
+            let (rest, scopes) = TypeLengthField::take_from((scope_len / 4) as usize, rest)
+                .unwrap();
+            let (rest, options) = TypeLengthField::take_from((option_len / 4) as usize, rest)
                 .unwrap();
 
             Ok((
