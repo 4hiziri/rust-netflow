@@ -1,12 +1,9 @@
-// TODO: impl converter for Field
-
 use nom::be_u16;
 
-named!(netflowfield <&[u8], NetFlowField>,
+named!(netflowfield <&[u8], TypeLengthField>,
        dbg!(map!(count!(map!(take!(2), be_u16), 2),
-                 |v: Vec<_>| NetFlowField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
+                 |v: Vec<_>| TypeLengthField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
 
-// TODO: from_str and compare(?)
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
     pub type_val: u16,
@@ -37,6 +34,7 @@ impl TypeLengthField {
 }
 
 #[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
 pub mod FieldTypes {
     pub const IN_BYTES: u16 = 1; // N, default is 4
     pub const IN_PKTS: u16 = 2; // N, default is 4
@@ -122,7 +120,7 @@ pub mod FieldTypes {
     pub const IF_DESC: u16 = 83; // N, string
     pub const SAMPLER_NAME: u16 = 84; // N, string
     pub const IN_PERMANENT_BYTES: u16 = 85; // N, default is 4
-    pub const IN_PERMANENT_BYTES: u16 = 86; // N, default is 4
+    pub const IN_PERMANENT_PKTS: u16 = 86; // N, default is 4
     pub const VENDOR_PROPRIETARY_87: u16 = 87; // N
     pub const FRAGMENT_OFFSET: u16 = 88; // 2
     pub const FORWARDING_STATUS: u16 = 89; // 1, check bit meanings
@@ -153,11 +151,6 @@ pub mod ScopeTypes {
     pub const Template: u16 = 5;
 }
 
-// FIXME: all template use TypeLengthField, and make NetFlowFields real field
-pub type NetFlowField = TypeLengthField; // Field of DataTemplate
-pub type NetFlowOption = TypeLengthField; // Field of OptionTemplate
-pub type NetFlowScope = TypeLengthField; // Field of OptionScope
-
 // TODO: impl each types of field, enum
 pub struct Field {
     id: u16,
@@ -172,3 +165,41 @@ pub struct Field {
 // 5. ipv6 address
 // 6. mac address
 // 7. string
+
+pub enum NetFlowField {
+    FixNum(),
+    FlexNum(), // Can use Fix Length?
+    ByteArray(),
+    IPv4Addr(),
+    IPv6Addr(),
+    MacAddr(),
+    String(),
+}
+
+pub struct FixNumField<T> {
+    id: u16,
+    value: T,
+}
+
+impl From<Field> for FixNumField {
+    fn from(field: ) {
+
+    }
+}
+
+use std::boxed::Box;
+impl<T> FixNumField<T> {
+    pub fn new(id: u16, value: &[u8]) -> FixNumField<T> {
+        let len = value.len();
+        let test: u8 = || 1 + 1;
+
+        FixNumField {
+            id: id,
+            inner_value: value.to_vec(),
+            value: value[0],
+        }
+    }
+}
+
+// TODO: from_str and compare(?)
+// TODO: impl converter for Field
