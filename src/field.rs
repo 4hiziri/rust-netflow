@@ -1,4 +1,5 @@
-use nom::be_u16;
+use nom::{be_u16, be_u32, be_u64};
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 named!(netflowfield <&[u8], TypeLengthField>,
        dbg!(map!(count!(map!(take!(2), be_u16), 2),
@@ -167,36 +168,41 @@ pub struct Field {
 // 7. string
 
 pub enum NetFlowField {
-    FixNum(),
-    FlexNum(), // Can use Fix Length?
-    ByteArray(),
-    IPv4Addr(),
-    IPv6Addr(),
-    MacAddr(),
-    String(),
+    NumField(UInt),
+    ByteArray(Vec<u8>),
+    IPv4Addr(Ipv4Addr),
+    IPv6Addr(Ipv6Addr),
+    MacAddr(), // impl or use pnet
+    String(String),
 }
 
-pub struct FixNumField<T> {
-    id: u16,
-    value: T,
+pub enum UInt {
+    UInt8(u8),
+    UInt16(u16),
+    UInt32(u32),
+    UInt64(u64),
+    UIntFlex(Vec<u8>),
+    // uint128(u128), unstable feature
 }
 
-impl From<Field> for FixNumField {
-    fn from(field: ) {
+/// use for representing u-int field value
+/// every field can have various bit-length
+/// so, field must be able to accept such config
+impl UInt {
+    // convert uint from [u8] as BigEndian
+    pub fn from_bytes(bytes: &[u8]) -> UInt {
+        let len = bytes.len();
 
-    }
-}
-
-use std::boxed::Box;
-impl<T> FixNumField<T> {
-    pub fn new(id: u16, value: &[u8]) -> FixNumField<T> {
-        let len = value.len();
-        let test: u8 = || 1 + 1;
-
-        FixNumField {
-            id: id,
-            inner_value: value.to_vec(),
-            value: value[0],
+        if len == 1 {
+            UInt::UInt8(bytes[0])
+        } else if len == 2 {
+            UInt::UInt16(be_u16(&bytes).unwrap().1)
+        } else if len > 2 && len <= 4 {
+            UInt::UInt32(be_u32(&bytes).unwrap().1)
+        } else if len > 4 && len <= 8 {
+            UInt::UInt64(be_u64(&bytes).unwrap().1)
+        } else {
+            UInt::UIntFlex(bytes.to_vec())
         }
     }
 }
