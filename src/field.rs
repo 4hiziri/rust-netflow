@@ -7,14 +7,14 @@ named!(netflowfield <&[u8], TypeLengthField>,
 
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
-    pub type_val: u16,
+    pub type_id: u16,
     pub length: u16,
 }
 
 impl TypeLengthField {
-    pub fn new(type_val: u16, length: u16) -> TypeLengthField {
+    pub fn new(type_id: u16, length: u16) -> TypeLengthField {
         TypeLengthField {
-            type_val: type_val,
+            type_id: type_id,
             length: length,
         }
     }
@@ -167,7 +167,7 @@ pub struct Field {
 // 6. mac address
 // 7. string
 
-pub enum NetFlowField {
+pub enum FieldValue {
     NumField(UInt),
     ByteArray(Vec<u8>),
     IPv4Addr(Ipv4Addr),
@@ -205,6 +205,12 @@ impl UInt {
             UInt::UIntFlex(bytes.to_vec())
         }
     }
+}
+
+pub struct FlowField {
+    type_id: u16,
+    length: u16,
+    value: FieldValue,
 }
 
 // TODO: from_str and compare(?)
