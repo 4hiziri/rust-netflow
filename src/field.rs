@@ -433,6 +433,31 @@ pub struct FlowField {
     value: FieldValue,
 }
 
+impl FlowField {
+    pub fn new(type_id: u16, length: u16, value: FieldValue) -> FlowField {
+        FlowField {
+            type_id: type_id,
+            length: length,
+            value: value,
+        }
+    }
+
+    pub fn from_bytes(type_id: u16, length: u16, bytes: &[u8]) -> Result<(&[u8], FlowField), ()> {
+        if (length as usize) >= bytes.len() {
+            Ok((
+                &bytes[(length as usize)..],
+                FlowField::new(
+                    type_id,
+                    length,
+                    FieldValue::new(type_id, &bytes[..(length as usize)]),
+                ),
+            ))
+        } else {
+            Err(())
+        }
+    }
+}
+
 // TODO: from_str and compare(?)
 // TODO: impl converter for Field
 

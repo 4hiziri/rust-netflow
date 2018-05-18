@@ -278,25 +278,29 @@ impl DataFlow {
 
         if template.len() == 0 {
             debug!("invalid template, found {}", template.len());
+            Err(())
+        } else {
+            let template = template[0];
+            let mut rest = rest;
+            let mut fields: Vec<FlowField> = Vec::with_capacity(template.fields.len());
+
+            for field in &template.fields {
+                let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
+                    .unwrap();
+
+                fields.push(flow_field);
+                rest = next;
+            }
+
+            Ok((
+                rest,
+                DataFlow {
+                    flowset_id: flowset_id,
+                    length: length,
+                    record_bytes: record_bytes.to_vec(),
+                    records: fields,
+                },
+            ))
         }
-
-        let template = template[0];
-
-        Ok((
-            rest,
-            DataFlow {
-                flowset_id: flowset_id,
-                length: length,
-                record_bytes: record_bytes.to_vec(),
-                records: Vec::<FlowField>::new(),
-            },
-        ))
-    }
-
-    fn take_template(bytes: &[u8], template: &DataTemplate) {
-        let mut rest = &bytes;
-        let mut template_fields: Vec<FlowField> = Vec::with_capacity(template.field_count as usize);
-
-        for field_info in &template.fields {}
     }
 }
