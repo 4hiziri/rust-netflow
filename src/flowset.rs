@@ -236,23 +236,14 @@ pub struct DataFlow {
 }
 
 impl DataFlow {
-    pub fn new(flowset_id: u16, length: u16, records: Option<Vec<FlowField>>) {
-        DataFlow {
-            flowset_id: flowset_id,
-            length: length,
-            records_bytes: None,
-            records: records,
-        }
-    }
-
-    pub fn new(flowset_id: u16, length: u16, records_bytes: Option<Vec<u8>>) {
-        DataFlow {
-            flowset_id: flowset_id,
-            length: length,
-            records_bytes: records_bytes,
-            records: None,
-        }
-    }
+    // pub fn new<T>(flowset_id: u16, length: u16, records: Option<Vec<T>>) -> DataFlow {
+    //     DataFlow {
+    //         flowset_id: flowset_id,
+    //         length: length,
+    //         record_bytes: None,
+    //         records: records,
+    //     }
+    // }
 
     pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
         debug!("Length of parsing data: {}", data.len());
@@ -269,8 +260,8 @@ impl DataFlow {
             DataFlow {
                 flowset_id: flowset_id.unwrap().1,
                 length: length,
-                record_bytes: record_bytes.to_vec(),
-                records: Vec::<FlowField>::new(),
+                record_bytes: Some(record_bytes.to_vec()),
+                records: None,
             },
         ))
     }
@@ -285,8 +276,7 @@ impl DataFlow {
         let flowset_id = flowset_id.unwrap().1;
         let (rest, length) = flowset_length(&rest).unwrap();
         let length = length.unwrap().1;
-        let record_bytes = &rest[..(length as usize - 4)];
-        let rest = &rest[(length as usize - 4)..];
+
         // TODO: need field parser for skipping padding
 
         let template: Vec<&DataTemplate> = templates
@@ -315,10 +305,12 @@ impl DataFlow {
                 DataFlow {
                     flowset_id: flowset_id,
                     length: length,
-                    record_bytes: record_bytes.to_vec(),
-                    records: fields,
+                    record_bytes: None,
+                    records: Some(fields),
                 },
             ))
         }
     }
+
+    // fn validate_length()
 }
