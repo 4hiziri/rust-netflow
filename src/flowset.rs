@@ -231,11 +231,29 @@ impl OptionTemplate {
 pub struct DataFlow {
     flowset_id: u16,
     length: u16,
-    record_bytes: Vec<u8>,
-    records: Vec<FlowField>,
+    record_bytes: Option<Vec<u8>>,
+    records: Option<Vec<FlowField>>,
 }
 
 impl DataFlow {
+    pub fn new(flowset_id: u16, length: u16, records: Option<Vec<FlowField>>) {
+        DataFlow {
+            flowset_id: flowset_id,
+            length: length,
+            records_bytes: None,
+            records: records,
+        }
+    }
+
+    pub fn new(flowset_id: u16, length: u16, records_bytes: Option<Vec<u8>>) {
+        DataFlow {
+            flowset_id: flowset_id,
+            length: length,
+            records_bytes: records_bytes,
+            records: None,
+        }
+    }
+
     pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
         debug!("Length of parsing data: {}", data.len());
 
