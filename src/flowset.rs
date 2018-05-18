@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use field::TypeLengthField;
+use field::{TypeLengthField, FlowField};
 use nom;
 use nom::{be_u16, be_u32};
 
@@ -101,7 +101,7 @@ impl FlowSet {
                 Ok((next, FlowSet::OptionTemplate(option)))
             }
             _ => {
-                let (next, flow) = DataFlow::from_bytes(&data).unwrap();
+                let (next, flow) = DataFlow::from_bytes_notemplate(&data).unwrap();
                 debug!("parsed DataFlow: {:?}", flow);
                 Ok((next, FlowSet::DataFlow(flow)))
             }
@@ -178,7 +178,6 @@ impl DataTemplate {
     }
 }
 
-// FIXME:
 #[derive(Debug)]
 pub struct OptionTemplate {
     pub flowset_id: u16,
@@ -232,11 +231,12 @@ impl OptionTemplate {
 pub struct DataFlow {
     flowset_id: u16,
     length: u16,
-    records: Vec<u8>,
+    record_bytes: Vec<u8>,
+    records: Vec<FlowField>,
 }
 
 impl DataFlow {
-    pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
+    pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = flowset_id(&data).unwrap();
@@ -251,8 +251,52 @@ impl DataFlow {
             DataFlow {
                 flowset_id: flowset_id.unwrap().1,
                 length: length,
-                records: record_bytes.to_vec(),
+                record_bytes: record_bytes.to_vec(),
+                records: Vec::<FlowField>::new(),
             },
         ))
+    }
+
+    pub fn from_bytes<'a>(
+        data: &'a [u8],
+        templates: &[DataTemplate],
+    ) -> Result<(&'a [u8], DataFlow), ()> {
+        debug!("Length of parsing data: {}", data.len());
+
+        let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let flowset_id = flowset_id.unwrap().1;
+        let (rest, length) = flowset_length(&rest).unwrap();
+        let length = length.unwrap().1;
+        let record_bytes = &rest[..(length as usize - 4)];
+        let rest = &rest[(length as usize - 4)..];
+        // TODO: need field parser for skipping padding
+
+        let template: Vec<&DataTemplate> = templates
+            .iter()
+            .filter(|temp| temp.template_id == flowset_id)
+            .collect();
+
+        if template.len() == 0 {
+            debug!("invalid template, found {}", template.len());
+        }
+
+        let template = template[0];
+
+        Ok((
+            rest,
+            DataFlow {
+                flowset_id: flowset_id,
+                length: length,
+                record_bytes: record_bytes.to_vec(),
+                records: Vec::<FlowField>::new(),
+            },
+        ))
+    }
+
+    fn take_template(bytes: &[u8], template: &DataTemplate) {
+        let mut rest = &bytes;
+        let mut template_fields: Vec<FlowField> = Vec::with_capacity(template.field_count as usize);
+
+        for field_info in &template.fields {}
     }
 }
