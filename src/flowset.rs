@@ -84,6 +84,7 @@ const TEMPLATE_FLOWSET_ID: u16 = 0;
 const OPTION_FLOWSET_ID: u16 = 1;
 
 impl FlowSet {
+    // TODO: parse with template
     fn from_bytes(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
         let id = id.unwrap().1;
