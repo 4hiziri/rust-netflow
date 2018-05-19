@@ -247,6 +247,8 @@ impl DataFlow {
     // }
 
     pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
+        // Some implementation can append padding, so I can't parse dataflow without template information.
+        info!("WARNING: from_bytes_notemplate may not work! I can't handle padding correctly without Templates.")
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = flowset_id(&data).unwrap();
