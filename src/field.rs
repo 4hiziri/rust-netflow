@@ -443,7 +443,7 @@ impl FlowField {
     }
 
     pub fn from_bytes(type_id: u16, length: u16, bytes: &[u8]) -> Result<(&[u8], FlowField), ()> {
-        if (length as usize) >= bytes.len() {
+        if (length as usize) <= bytes.len() {
             Ok((
                 &bytes[(length as usize)..],
                 FlowField::new(

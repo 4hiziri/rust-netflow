@@ -139,6 +139,7 @@ impl DataTemplate {
         }
     }
 
+    // FIXME: to methode?
     fn validate_length(field_count: u16, length: u16) -> bool {
         2 + 2 + 2 + 2 + field_count * 4 == length
     }
@@ -176,6 +177,32 @@ impl DataTemplate {
         } else {
             Err(())
         }
+    }
+
+    pub fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
+        let mut rest = payload;
+        let mut fields: Vec<FlowField> = Vec::with_capacity(self.fields.len());
+
+        for field in &self.fields {
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
+                .unwrap();
+
+            fields.push(flow_field);
+            rest = next;
+        }
+
+        Ok((&rest, fields))
+    }
+
+    pub fn get_dataflow_length(&self) -> u16 {
+        // TODO: search reduce or fold
+        let mut acc = 0;
+
+        for field in &self.fields {
+            acc += field.length
+        }
+
+        acc
     }
 }
 
@@ -230,25 +257,34 @@ impl OptionTemplate {
 
 #[derive(Debug)]
 pub struct DataFlow {
-    flowset_id: u16,
-    length: u16,
-    record_bytes: Option<Vec<u8>>,
-    records: Option<Vec<FlowField>>,
+    pub flowset_id: u16,
+    pub length: u16,
+    pub record_bytes: Option<Vec<u8>>,
+    pub records: Option<Vec<Vec<FlowField>>>, // TODO: extract as Record
 }
 
-impl DataFlow {
-    // pub fn new<T>(flowset_id: u16, length: u16, records: Option<Vec<T>>) -> DataFlow {
-    //     DataFlow {
-    //         flowset_id: flowset_id,
-    //         length: length,
-    //         record_bytes: None,
-    //         records: records,
-    //     }
-    // }
+// pub struct Record {
+//     pub data_flow: Vec<DataFlow>,
+// }
+// TODO: impl search or map like access API
 
+impl DataFlow {
+    pub fn new(
+        flowset_id: u16,
+        length: u16,
+        record_bytes: Option<Vec<u8>>,
+        records: Option<Vec<Vec<FlowField>>>,
+    ) -> DataFlow {
+        DataFlow {
+            flowset_id: flowset_id,
+            length: length,
+            record_bytes: record_bytes,
+            records: records,
+        }
+    }
+
+    // Some implementation seems not to append padding
     pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
-        // Some implementation can append padding, so I can't parse dataflow without template information.
-        info!("WARNING: from_bytes_notemplate may not work! I can't handle padding correctly without Templates.")
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = flowset_id(&data).unwrap();
@@ -256,17 +292,29 @@ impl DataFlow {
         let length = length.unwrap().1;
         let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
-        // TODO: need field parser for skipping padding
 
         Ok((
             rest,
-            DataFlow {
-                flowset_id: flowset_id.unwrap().1,
-                length: length,
-                record_bytes: Some(record_bytes.to_vec()),
-                records: None,
-            },
+            DataFlow::new(
+                flowset_id.unwrap().1,
+                length,
+                Some(record_bytes.to_vec()),
+                None,
+            ),
         ))
+    }
+
+    fn get_template(flowset_id: u16, templates: &[DataTemplate]) -> Option<&DataTemplate> {
+        let template: Vec<&DataTemplate> = templates
+            .iter()
+            .filter(|temp| temp.template_id == flowset_id)
+            .collect();
+
+        if template.len() == 0 {
+            None
+        } else {
+            Some(&template[0])
+        }
     }
 
     pub fn from_bytes<'a>(
@@ -281,39 +329,45 @@ impl DataFlow {
         let length = length.unwrap().1;
 
         // TODO: need field parser for skipping padding
+        let template: Option<&DataTemplate> = DataFlow::get_template(flowset_id, templates);
 
-        let template: Vec<&DataTemplate> = templates
-            .iter()
-            .filter(|temp| temp.template_id == flowset_id)
-            .collect();
+        match template {
+            Some(template) => {
+                let records_num = DataFlow::get_record_num(length, template.get_dataflow_length());
+                let mut records: Vec<Vec<FlowField>> = Vec::with_capacity(records_num);
+                let mut rest = rest;
 
-        if template.len() == 0 {
-            debug!("invalid template, found {}", template.len());
-            Err(())
-        } else {
-            let template = template[0];
-            let mut rest = rest;
-            let mut fields: Vec<FlowField> = Vec::with_capacity(template.fields.len());
+                for _ in 0..records_num {
+                    let (next, fields) = template.parse_dataflow(rest).unwrap();
+                    records.push(fields);
+                    rest = next;
+                }
 
-            for field in &template.fields {
-                let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
-                    .unwrap();
+                let padding = DataFlow::get_padding(length, template.get_dataflow_length());
 
-                fields.push(flow_field);
-                rest = next;
+                if padding > 0 {
+                    rest = &rest[(padding as usize)..]
+                }
+
+                // Left bytes for future parsing?
+                Ok((
+                    rest,
+                    DataFlow::new(flowset_id, length, None, Some(records)),
+                ))
             }
-
-            Ok((
-                rest,
-                DataFlow {
-                    flowset_id: flowset_id,
-                    length: length,
-                    record_bytes: None,
-                    records: Some(fields),
-                },
-            ))
+            None => {
+                // Return Err, None or bytes field?
+                debug!("Template is not found, flowset_id = {}", flowset_id);
+                Err(())
+            }
         }
     }
 
-    // fn validate_length()
+    fn get_record_num(payload_len: u16, template_len: u16) -> usize {
+        ((payload_len - 4) / template_len) as usize
+    }
+
+    fn get_padding(payload_len: u16, template_len: u16) -> u16 {
+        payload_len - template_len * DataFlow::get_record_num(payload_len, template_len) as u16 - 4
+    }
 }

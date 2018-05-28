@@ -39,8 +39,27 @@ fn test_option_template() {
 fn test_data_flow() {
     let packet_bytes = &test_data::DATAFLOW_DATA[..];
 
-    let res = DataFlow::from_bytes(&packet_bytes);
+    let res = DataFlow::from_bytes_notemplate(&packet_bytes);
     assert!(res.is_ok());
+}
+
+#[test]
+fn test_dataflow_with_template() {
+    let template = DataTemplate::from_bytes(&test_data::TEMPLATE_AND_DATA.0);
+    assert!(template.is_ok());
+    let template = template.unwrap().1;
+
+    let dataflow = DataFlow::from_bytes(&test_data::TEMPLATE_AND_DATA.1, &[template]);
+    assert!(dataflow.is_ok());
+    let dataflow: DataFlow = dataflow.unwrap().1;
+
+    assert!(dataflow.record_bytes.is_none());
+    assert!(dataflow.records.is_some());
+    assert_eq!(dataflow.flowset_id, 1024);
+    assert_eq!(dataflow.length, 484);
+
+    let records = dataflow.records.unwrap();
+    assert_eq!(records.len(), 8);
 }
 
 // TODO: can use macro?
