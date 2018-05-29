@@ -1,5 +1,6 @@
 #[allow(unused_imports)]
 use super::flowset::*;
+use super::netflow::netflow::*;
 use super::test_data;
 
 #[test]
