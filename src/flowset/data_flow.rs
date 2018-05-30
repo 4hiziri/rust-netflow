@@ -79,7 +79,8 @@ impl DataFlow {
 
         match template {
             Some(template) => {
-                let records_num = DataFlow::get_record_num(length, template.get_dataflow_length());
+                let template_len = template.get_template_len();
+                let records_num = DataFlow::get_record_num(length, template_len);
                 let mut records: Vec<Vec<FlowField>> = Vec::with_capacity(records_num);
                 let mut rest = rest;
 
@@ -89,7 +90,7 @@ impl DataFlow {
                     rest = next;
                 }
 
-                let padding = DataFlow::get_padding(length, template.get_dataflow_length());
+                let padding = DataFlow::get_padding(length, template_len);
 
                 if padding > 0 {
                     rest = &rest[(padding as usize)..]

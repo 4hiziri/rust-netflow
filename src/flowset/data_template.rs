@@ -72,20 +72,16 @@ impl DataTemplate {
             Err(())
         }
     }
-
-    pub fn get_dataflow_length(&self) -> u16 {
-        // TODO: search reduce or fold
-        let mut acc = 0;
-
-        for field in &self.fields {
-            acc += field.length
-        }
-
-        acc
-    }
 }
 
 impl Template for DataTemplate {
+    fn get_template_len(&self) -> u16 {
+        self.fields[..]
+            .into_iter()
+            .fold(0, |sum, field| sum + field.length)
+            .to_owned()
+    }
+
     fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
         let mut rest = payload;
         let template = &self.fields;

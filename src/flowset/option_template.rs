@@ -55,6 +55,17 @@ impl OptionTemplate {
 }
 
 impl Template for OptionTemplate {
+    fn get_template_len(&self) -> u16 {
+        self.scopes[..].into_iter().fold(
+            0,
+            |sum, field| sum + field.length,
+        ) +
+            self.options[..].into_iter().fold(
+                0,
+                |sum, field| sum + field.length,
+            )
+    }
+
     fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
         let mut rest = payload;
         let mut fields: Vec<FlowField> = Vec::with_capacity(self.scopes.len() + self.options.len());
