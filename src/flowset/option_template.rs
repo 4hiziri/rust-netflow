@@ -1,7 +1,7 @@
 use nom;
 use nom::be_u16;
-use field::TypeLengthField;
-use super::{flowset_id, flowset_length, template_id};
+use field::{TypeLengthField, FlowField};
+use super::{flowset_id, flowset_length, template_id, Template};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
 
@@ -51,5 +51,30 @@ impl OptionTemplate {
         } else {
             Err(())
         }
+    }
+}
+
+impl Template for OptionTemplate {
+    fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
+        let mut rest = payload;
+        let mut fields: Vec<FlowField> = Vec::with_capacity(self.scopes.len() + self.options.len());
+
+        for field in &self.scopes {
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
+                .unwrap();
+
+            fields.push(flow_field);
+            rest = next;
+        }
+
+        for field in &self.options {
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
+                .unwrap();
+
+            fields.push(flow_field);
+            rest = next;
+        }
+
+        Ok((rest, fields))
     }
 }

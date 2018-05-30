@@ -1,7 +1,7 @@
 use nom;
 use nom::be_u16;
 use field::{TypeLengthField, FlowField};
-use super::{flowset_id, flowset_length, template_id};
+use super::{flowset_id, flowset_length, template_id, Template};
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 
@@ -73,21 +73,6 @@ impl DataTemplate {
         }
     }
 
-    pub fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
-        let mut rest = payload;
-        let mut fields: Vec<FlowField> = Vec::with_capacity(self.fields.len());
-
-        for field in &self.fields {
-            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
-                .unwrap();
-
-            fields.push(flow_field);
-            rest = next;
-        }
-
-        Ok((&rest, fields))
-    }
-
     pub fn get_dataflow_length(&self) -> u16 {
         // TODO: search reduce or fold
         let mut acc = 0;
@@ -97,5 +82,23 @@ impl DataTemplate {
         }
 
         acc
+    }
+}
+
+impl Template for DataTemplate {
+    fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
+        let mut rest = payload;
+        let template = &self.fields;
+        let mut fields: Vec<FlowField> = Vec::with_capacity(template.len());
+
+        for field in template {
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
+                .unwrap();
+
+            fields.push(flow_field);
+            rest = next;
+        }
+
+        Ok((rest, fields))
     }
 }

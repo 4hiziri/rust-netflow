@@ -1,5 +1,5 @@
 use field::FlowField;
-use super::{flowset_id, flowset_length, DataTemplate};
+use super::{flowset_id, flowset_length, DataTemplate, Template};
 
 #[derive(Debug)]
 pub struct DataFlow {

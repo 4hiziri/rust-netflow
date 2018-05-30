@@ -3,6 +3,9 @@ mod flowset_tests;
 #[cfg(test)]
 mod test_data;
 
+mod template;
+use self::template::*;
+
 mod data_template;
 use self::data_template::*;
 
@@ -27,6 +30,7 @@ named!(flowset_length <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16))
 named!(template_id <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
 
 impl FlowSet {
+    // TODO: impl From trait?
     // TODO: parse with template
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], FlowSet), ()> {
         let (_, id) = flowset_id(&data).unwrap();
@@ -50,5 +54,23 @@ impl FlowSet {
                 Ok((next, FlowSet::DataFlow(flow)))
             }
         }
+    }
+
+    pub fn to_vec(data: &[u8]) -> Result<(&[u8], Vec<FlowSet>), ()> {
+        let mut rest = data;
+
+        while rest.len() > 0 {
+            let (next, flowset) = FlowSet::from_bytes(&data).unwrap();
+
+            match flowset {
+                FlowSet::DataTemplate(template) => {}
+                FlowSet::OptionTemplate(template) => {}
+                FlowSet::DataFlow(template) => {}
+            }
+
+            rest = next;
+        }
+
+        Err(())
     }
 }
