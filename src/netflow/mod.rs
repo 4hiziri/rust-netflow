@@ -11,15 +11,8 @@ use flowset::FlowSet;
 
 // Netflow V9 -> Header + (Template* Option* Data*)
 
-// FIXME: simplify parser, alias
-// named!(take_as_u16 <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(netflow_version <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-
-named!(netflow9_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(netflow9_sys_uptime <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
-named!(netflow9_timestamp <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
-named!(netflow9_flow_sequence <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
-named!(netflow9_source_id <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
+named!(take_u16 <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
+named!(take_u32 <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
 
 // TODO: enum NetFlow or abstract with Netflow struct
 #[derive(Debug)]
@@ -48,15 +41,15 @@ impl NetFlow9 {
     }
 
     pub fn from_bytes(payload: &[u8]) -> Result<NetFlow9, ()> {
-        let (payload, version) = netflow_version(payload).unwrap();
+        let (payload, version) = take_u16(payload).unwrap();
         let version = version.unwrap().1;
 
         if version == 9 {
-            let (payload, count) = netflow9_count(payload).unwrap();
-            let (payload, sys_uptime) = netflow9_sys_uptime(payload).unwrap();
-            let (payload, timestamp) = netflow9_timestamp(payload).unwrap();
-            let (payload, flow_sequence) = netflow9_flow_sequence(payload).unwrap();
-            let (payload, source_id) = netflow9_source_id(payload).unwrap();
+            let (payload, count) = take_u16(payload).unwrap();
+            let (payload, sys_uptime) = take_u32(payload).unwrap();
+            let (payload, timestamp) = take_u32(payload).unwrap();
+            let (payload, flow_sequence) = take_u32(payload).unwrap();
+            let (payload, source_id) = take_u32(payload).unwrap();
             let flow_sets = NetFlow9::parse_flowsets(payload).unwrap();
 
             Ok(NetFlow9 {
