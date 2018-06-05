@@ -1,3 +1,4 @@
+use error::{Error, ParseResult};
 use field::{FlowField, TypeLengthField};
 use util::take_u16;
 
@@ -19,7 +20,7 @@ impl Template {
         }
     }
 
-    pub fn from_bytes(length: u16, data: &[u8]) -> Result<(&[u8], Self), ()> {
+    pub fn from_bytes(length: u16, data: &[u8]) -> ParseResult<Self> {
         let (rest, template_id) = take_u16(&data).unwrap(); // Err
         let (rest, field_count) = take_u16(&rest).unwrap();
 
@@ -28,11 +29,11 @@ impl Template {
         // template_id, field_count, flowset_id and flowset_length field len is 8
         if length - Template::HEADER_LEN >= field_count * 4 {
             let (rest, fields): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::take_from(field_count as usize, &rest).unwrap(); // Err
+                TypeLengthField::to_vec(field_count as usize, &rest).unwrap(); // Err
 
             Ok((rest, Template::new(template_id, field_count, fields)))
         } else {
-            Err(())
+            Err(Error::InvalidLength)
         }
     }
 
@@ -45,7 +46,7 @@ impl Template {
         self.field_count * 4
     }
 
-    pub fn to_vec(length: u16, data: &[u8]) -> Result<(&[u8], Vec<Self>), ()> {
+    pub fn to_vec(length: u16, data: &[u8]) -> ParseResult<Vec<Self>> {
         let mut templates: Vec<Self> = Vec::new();
         let mut rest_length = length;
         let mut rest = data;
@@ -62,7 +63,7 @@ impl Template {
         Ok((rest, templates))
     }
 
-    pub fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
+    pub fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> ParseResult<'a, Vec<FlowField>> {
         let mut rest = payload;
         let template = &self.fields;
         let mut fields: Vec<FlowField> = Vec::with_capacity(template.len());

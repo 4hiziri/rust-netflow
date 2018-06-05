@@ -1,19 +1,9 @@
 use super::Template;
+use error::{Error, ParseResult};
 use field::TypeLengthField;
 use util::take_u16;
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
-
-// #[derive(Debug)]
-// pub struct OptionTemplate {
-//     pub flowset_id: u16,
-//     pub length: u16,
-//     pub template_id: u16,
-//     pub option_scope_length: u16,
-//     pub option_length: u16,
-//     pub scopes: Vec<TypeLengthField>,
-//     pub options: Vec<TypeLengthField>,
-// }
 
 // TODO: change more easy struct
 #[derive(Debug)]
@@ -45,7 +35,7 @@ impl OptionTemplate {
         }
     }
 
-    pub fn from_bytes(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
+    pub fn from_bytes(data: &[u8]) -> ParseResult<Self> {
         let (rest, flowset_id) = take_u16(&data).unwrap();
 
         if flowset_id == OPTION_FLOWSET_ID {
@@ -53,10 +43,8 @@ impl OptionTemplate {
             let (rest, template_id) = take_u16(&rest).unwrap();
             let (rest, scope_len) = take_u16(&rest).unwrap();
             let (rest, option_len) = take_u16(&rest).unwrap();
-            let (rest, scopes) =
-                TypeLengthField::take_from((scope_len / 4) as usize, rest).unwrap();
-            let (rest, options) =
-                TypeLengthField::take_from((option_len / 4) as usize, rest).unwrap();
+            let (rest, scopes) = TypeLengthField::to_vec((scope_len / 4) as usize, rest).unwrap();
+            let (rest, options) = TypeLengthField::to_vec((option_len / 4) as usize, rest).unwrap();
 
             Ok((
                 rest,
@@ -71,7 +59,7 @@ impl OptionTemplate {
                 ),
             ))
         } else {
-            Err(())
+            Err(Error::InvalidLength)
         }
     }
 }
@@ -79,13 +67,14 @@ impl OptionTemplate {
 #[cfg(test)]
 mod test_option_template {
     use super::OptionTemplate;
+    use error::ParseResult;
     use flowset::test_data;
 
     #[test]
     fn test_option_template() {
         let packet_bytes = &test_data::OPTION_DATA[..];
 
-        let option: Result<(&[u8], OptionTemplate), ()> = OptionTemplate::from_bytes(&packet_bytes);
+        let option: ParseResult<OptionTemplate> = OptionTemplate::from_bytes(&packet_bytes);
         assert!(option.is_ok());
 
         let (_rest, option): (&[u8], OptionTemplate) = option.unwrap();

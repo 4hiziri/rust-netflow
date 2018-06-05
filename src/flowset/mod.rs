@@ -15,6 +15,7 @@ use self::data_flow::*;
 mod template;
 use self::template::*;
 
+use error::{Error, ParseResult};
 use util::take_u16;
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ pub enum FlowSet {
 
 impl FlowSet {
     // TODO: parse with template
-    pub fn from_bytes(data: &[u8]) -> Result<(&[u8], Self), ()> {
+    pub fn from_bytes(data: &[u8]) -> ParseResult<Self> {
         let (_, id) = take_u16(&data).unwrap(); // num::IResult
 
         info!("parsed flowset id: {:?}", id);
@@ -51,7 +52,7 @@ impl FlowSet {
     }
 
     // TODO: impl
-    pub fn to_vec(data: &[u8]) -> Result<(&[u8], Vec<Self>), ()> {
+    pub fn to_vec(data: &[u8]) -> ParseResult<Vec<Self>> {
         let mut rest = data;
 
         while rest.len() > 0 {
@@ -66,6 +67,6 @@ impl FlowSet {
             rest = next;
         }
 
-        Err(())
+        Err(Error::InvalidLength)
     }
 }

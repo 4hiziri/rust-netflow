@@ -1,8 +1,9 @@
+use error::ParseResult;
 use nom::be_u16;
 
 named!(netflowfield <&[u8], TypeLengthField>,
-       dbg!(map!(count!(map!(take!(2), be_u16), 2),
-                 |v: Vec<_>| TypeLengthField::new(v[0].clone().unwrap().1, v[1].clone().unwrap().1))));
+       dbg!(map!(count!(map!(take!(2), |i| be_u16(i).unwrap().1), 2),
+                 |v: Vec<_>| TypeLengthField::new(v[0], v[1]))));
 
 #[derive(Debug, Clone, Copy)]
 pub struct TypeLengthField {
@@ -18,8 +19,7 @@ impl TypeLengthField {
         }
     }
 
-    pub fn take_from(count: usize, data: &[u8]) -> Result<(&[u8], Vec<TypeLengthField>), ()> {
-        // TODO: define Error type
+    pub fn to_vec(count: usize, data: &[u8]) -> ParseResult<Vec<TypeLengthField>> {
         let mut rest = data;
         let mut field_vec = Vec::with_capacity(count as usize);
 

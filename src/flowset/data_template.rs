@@ -1,4 +1,5 @@
 use super::Template;
+use error::{Error, ParseResult};
 use util::take_u16;
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
@@ -20,7 +21,7 @@ impl DataTemplate {
         }
     }
 
-    pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
+    pub fn from_bytes(data: &[u8]) -> ParseResult<DataTemplate> {
         let (rest, flowset_id) = take_u16(&data).unwrap();
         let (rest, flowset_length) = take_u16(&rest).unwrap();
         let (rest, templates) = Template::to_vec(flowset_length - 4, &rest).unwrap();
@@ -28,7 +29,7 @@ impl DataTemplate {
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((rest, DataTemplate::new(flowset_length, templates)))
         } else {
-            Err(()) // Err need compose?
+            Err(Error::InvalidLength)
         }
     }
 }
@@ -36,6 +37,7 @@ impl DataTemplate {
 #[cfg(test)]
 mod data_template_test {
     use super::DataTemplate;
+    use error::ParseResult;
     use flowset::test_data;
 
     #[test]
@@ -43,8 +45,7 @@ mod data_template_test {
         let data_template_payload = &test_data::TEMPLATE_DATA[..];
 
         // parsing process test
-        let template: Result<(&[u8], DataTemplate), ()> =
-            DataTemplate::from_bytes(&data_template_payload);
+        let template: ParseResult<DataTemplate> = DataTemplate::from_bytes(&data_template_payload);
         assert!(template.is_ok());
 
         // parsing result test

@@ -31,7 +31,7 @@ pub const IPV6_FLOW_LABEL: u16 = 31; // 3
 pub const ICMP_TYPE: u16 = 32; //2, ICMP_Type * 256 + ICMP_Code
 pub const MUL_IGMP_TYPE: u16 = 33; // 1
 pub const SAMPLING_INTERVAL: u16 = 34; // 4
-//0x01 Deterministic Sampling ,0x02 Random Sampling
+                                       //0x01 Deterministic Sampling ,0x02 Random Sampling
 pub const SAMPLING_ALGORITHM: u16 = 35; // 1
 pub const FLOW_ACTIVE_TIMEOUT: u16 = 36; // 2
 pub const FLOW_INACTIVE_TIMEOUT: u16 = 37; // 2
@@ -43,7 +43,7 @@ pub const TOTAL_FLOWS_EXP: u16 = 42; // N, default is 4
 pub const VENDOR_PROPRIETARY_43: u16 = 43; // N
 pub const IPV4_SRC_PREFIX: u16 = 44; // 4, IPv4 address, specific cisco
 pub const IPV4_DST_PREFIX: u16 = 45; // 4, IPv4 address, specific cisco
-// 0x00 UNKNOWN 0x01 TE-MIDPT 0x02 ATOM 0x03 VPN 0x04 BGP 0x05 LDP
+                                     // 0x00 UNKNOWN 0x01 TE-MIDPT 0x02 ATOM 0x03 VPN 0x04 BGP 0x05 LDP
 pub const MPLS_TOP_LABEL_TYPE: u16 = 46; // 1
 pub const MPLS_TOP_LABEL_IP_ADDR: u16 = 47; // 4
 pub const FLOW_SAMPLER_ID: u16 = 48; // 1
@@ -58,9 +58,9 @@ pub const SRC_MAC: u16 = 56; // 6, MAC address
 pub const DST_MAC: u16 = 57; // 6, MAC address
 pub const SRC_VLAN: u16 = 58; // 2
 pub const DST_VLAN: u16 = 59; // 2
-// if there isn't this field, v4 is assumed
+                              // if there isn't this field, v4 is assumed
 pub const IP_PROTOCOL_VERSION: u16 = 60; // 1
-// 0 = ingres flow, 1 = egress flow
+                                         // 0 = ingres flow, 1 = egress flow
 pub const DIRECTION: u16 = 61; // 1
 pub const IPV6_NEXT_HOP: u16 = 62; // 16, IPv6 address
 pub const BGP_IPV6_NEXT_HOP: u16 = 63; // 16, IPv6 address
@@ -89,7 +89,7 @@ pub const IN_PERMANENT_BYTES: u16 = 85; // N, default is 4
 pub const IN_PERMANENT_PKTS: u16 = 86; // N, default is 4
 pub const VENDOR_PROPRIETARY_87: u16 = 87; // N
 pub const FRAGMENT_OFFSET: u16 = 88; // 2
-// check bit meanings
+                                     // check bit meanings
 pub const FORWARDING_STATUS: u16 = 89; // 1
 pub const MPLS_PAL_RD: u16 = 90; // 8, array
 pub const MPLS_PREFIX_LEN: u16 = 91; // 1
@@ -104,5 +104,5 @@ pub const DEPRECATED: u16 = 100; // N
 pub const layer2packetSectionOffset: u16 = 102; // N
 pub const layer2packetSectionSize: u16 = 103; // N
 pub const layer2packetSectionData: u16 = 104; // N
-// 105 to 127 are reserved
-// 128 to 32768 are in IANA
+                                              // 105 to 127 are reserved
+                                              // 128 to 32768 are in IANA

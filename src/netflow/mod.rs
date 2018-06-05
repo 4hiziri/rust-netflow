@@ -3,6 +3,7 @@ mod test_data;
 #[cfg(test)]
 mod tests;
 
+use error::Error;
 use flowset::FlowSet;
 use util::{take_u16, take_u32};
 
@@ -24,7 +25,7 @@ pub struct NetFlow9 {
 }
 
 impl NetFlow9 {
-    fn parse_flowsets(data: &[u8]) -> Result<Vec<FlowSet>, ()> {
+    fn parse_flowsets(data: &[u8]) -> Result<Vec<FlowSet>, Error> {
         let mut rest: &[u8] = data;
         let mut flowsets = Vec::<FlowSet>::new();
 
@@ -37,7 +38,7 @@ impl NetFlow9 {
         Ok(flowsets)
     }
 
-    pub fn from_bytes(payload: &[u8]) -> Result<Self, ()> {
+    pub fn from_bytes(payload: &[u8]) -> Result<Self, Error> {
         let (payload, version) = take_u16(payload).unwrap(); // Err
 
         if version == 9 {
@@ -59,7 +60,7 @@ impl NetFlow9 {
                 flow_sets: flow_sets,
             })
         } else {
-            Err(())
+            Err(Error::InvalidFieldValue)
         }
     }
 }

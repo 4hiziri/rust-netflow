@@ -1,26 +1,32 @@
-use std::collections::HashSet;
-use std::net::{Ipv4Addr, Ipv6Addr};
-use nom::{be_u16, be_u32, be_u64};
-use std::convert::From;
 use super::MacAddr;
+use nom::{be_u16, be_u32, be_u64};
+use std::collections::HashSet;
+use std::convert::From;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 fn be_u128(i: &[u8]) -> Result<(&[u8], u128), ()> {
     if i.len() < 16 {
         Err(())
     } else {
-        let res = ((i[0] as u128) << 120) + ((i[1] as u128) << 112) + ((i[2] as u128) << 104) +
-            ((i[3] as u128) << 96) +
-            ((i[4] as u128) << 88) + ((i[5] as u128) << 80) +
-            ((i[6] as u128) << 72) + ((i[7] as u128) << 64) +
-            ((i[8] as u128) << 56) +
-            ((i[9] as u128) << 48) + ((i[10] as u128) << 40) +
-            ((i[11] as u128) << 32) +
-            ((i[12] as u128) << 24) +
-            ((i[13] as u128) << 16) + ((i[14] as u128) << 8) + (i[15] as u128);
+        let res = ((i[0] as u128) << 120)
+            + ((i[1] as u128) << 112)
+            + ((i[2] as u128) << 104)
+            + ((i[3] as u128) << 96)
+            + ((i[4] as u128) << 88)
+            + ((i[5] as u128) << 80)
+            + ((i[6] as u128) << 72)
+            + ((i[7] as u128) << 64)
+            + ((i[8] as u128) << 56)
+            + ((i[9] as u128) << 48)
+            + ((i[10] as u128) << 40)
+            + ((i[11] as u128) << 32)
+            + ((i[12] as u128) << 24)
+            + ((i[13] as u128) << 16)
+            + ((i[14] as u128) << 8)
+            + (i[15] as u128);
         Ok((&i[16..], res))
     }
 }
-
 
 // research types
 // 1. flexible length num, length = N bytes
@@ -126,7 +132,7 @@ lazy_static! {
         set.insert(102);
         set.insert(103);
         set.insert(104);
-        
+
         set
     };
     static ref BYTES_ID: HashSet<u16> = {
@@ -221,12 +227,7 @@ impl FieldValue {
             FieldValue::Ipv6Addr(Ipv6Addr::from(be_u128(value).unwrap().1))
         } else if FieldValue::is_mac_field(type_id) {
             FieldValue::MacAddr(MacAddr::new(
-                value[0],
-                value[1],
-                value[2],
-                value[3],
-                value[4],
-                value[5],
+                value[0], value[1], value[2], value[3], value[4], value[5],
             ))
         } else if FieldValue::is_string_field(type_id) {
             FieldValue::String(String::from_utf8(value.to_vec()).unwrap())
@@ -267,6 +268,7 @@ impl UInt {
         } else if len > 8 && len <= 16 {
             UInt::UInt128(be_u128(&bytes).unwrap().1)
         } else {
+            // TODO: need error?
             UInt::UIntFlex(bytes.to_vec())
         }
     }

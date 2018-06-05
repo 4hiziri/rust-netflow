@@ -1,4 +1,5 @@
 use super::{DataTemplate, Template};
+use error::{Error, ParseResult};
 use field::FlowField;
 use util::take_u16;
 
@@ -31,7 +32,7 @@ impl DataFlow {
     }
 
     // Some implementation seems not to append padding
-    pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
+    pub fn from_bytes_notemplate(data: &[u8]) -> ParseResult<DataFlow> {
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = take_u16(&data).unwrap();
@@ -65,7 +66,7 @@ impl DataFlow {
         template: &Template,
         records_num: usize, // TODO: check max length
         payload: &'a [u8],
-    ) -> Result<(&'a [u8], Vec<Vec<FlowField>>), ()> {
+    ) -> ParseResult<'a, Vec<Vec<FlowField>>> {
         let mut records: Vec<Vec<FlowField>> = Vec::with_capacity(records_num);
         let mut rest = payload;
 
@@ -89,10 +90,7 @@ impl DataFlow {
         rest
     }
 
-    pub fn from_bytes<'a>(
-        data: &'a [u8],
-        templates: &[DataTemplate],
-    ) -> Result<(&'a [u8], DataFlow), ()> {
+    pub fn from_bytes<'a>(data: &'a [u8], templates: &[DataTemplate]) -> ParseResult<'a, DataFlow> {
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = take_u16(&data).unwrap();
@@ -100,7 +98,6 @@ impl DataFlow {
         let (rest, length) = take_u16(&rest).unwrap();
         let length = length;
 
-        // TODO: need field parser for skipping padding
         let template = DataFlow::get_template(flowset_id, templates);
 
         match template {
@@ -117,9 +114,8 @@ impl DataFlow {
                 Ok((rest, DataFlow::new(flowset_id, length, None, Some(records))))
             }
             None => {
-                // Return Err, None or bytes field?
                 debug!("Template is not found, flowset_id = {}", flowset_id);
-                Err(())
+                Err(Error::InvalidLength)
             }
         }
     }
