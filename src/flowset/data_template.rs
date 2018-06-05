@@ -1,7 +1,5 @@
-use nom;
-use nom::be_u16;
-use field::{TypeLengthField, FlowField};
-use super::{flowset_id, flowset_length, template_id, Template};
+use super::Template;
+use util::take_u16;
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 
@@ -10,91 +8,60 @@ pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 pub struct DataTemplate {
     pub flowset_id: u16,
     pub length: u16,
-    pub template_id: u16,
-    pub field_count: u16,
-    pub fields: Vec<TypeLengthField>,
+    pub templates: Vec<Template>,
 }
 
-named!(template_field_count <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-
 impl DataTemplate {
-    pub fn new(
-        length: u16,
-        template_id: u16,
-        field_count: u16,
-        fields: Vec<TypeLengthField>,
-    ) -> DataTemplate {
+    pub fn new(length: u16, templates: Vec<Template>) -> DataTemplate {
         DataTemplate {
             flowset_id: 0, // DataTemplate's flowset_id is 0
             length: length,
-            template_id: template_id,
-            field_count: field_count,
-            fields: fields,
+            templates: templates,
         }
-    }
-
-    // FIXME: to methode?
-    fn validate_length(field_count: u16, length: u16) -> bool {
-        2 + 2 + 2 + 2 + field_count * 4 == length
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
-        // TODO: define Error type
-        let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let (rest, flowset_id) = take_u16(&data).unwrap();
         let flowset_id = flowset_id.unwrap().1;
-        let (rest, flowset_length) = flowset_length(&rest).unwrap();
+        let (rest, flowset_length) = take_u16(&rest).unwrap();
         let flowset_length = flowset_length.unwrap().1;
-        let (rest, template_id) = template_id(&rest).unwrap();
-        let (rest, field_count) = template_field_count(&rest).unwrap();
-        let field_count = field_count.unwrap().1;
-        let (rest, field_vec): (&[u8], Vec<TypeLengthField>) =
-            TypeLengthField::take_from(field_count as usize, &rest).unwrap();
-
-        if !DataTemplate::validate_length(field_count, flowset_length) {
-            debug!(
-                "DataTemplate length is wrong. 8 + {} * 4 != {}",
-                field_count,
-                flowset_length
-            );
-        }
+        let (rest, templates) = Template::to_vec(flowset_length - 4, &rest).unwrap();
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
-            Ok((
-                rest,
-                DataTemplate::new(
-                    flowset_length,
-                    template_id.unwrap().1,
-                    field_count,
-                    field_vec,
-                ),
-            ))
+            Ok((rest, DataTemplate::new(flowset_length, templates)))
         } else {
             Err(())
         }
     }
 }
 
-impl Template for DataTemplate {
-    fn get_template_len(&self) -> u16 {
-        self.fields[..]
-            .into_iter()
-            .fold(0, |sum, field| sum + field.length)
-            .to_owned()
-    }
+#[cfg(test)]
+mod data_template_test {
+    use super::DataTemplate;
+    use flowset::test_data;
 
-    fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> Result<(&'a [u8], Vec<FlowField>), ()> {
-        let mut rest = payload;
-        let template = &self.fields;
-        let mut fields: Vec<FlowField> = Vec::with_capacity(template.len());
+    #[test]
+    fn test_data_template() {
+        let data_template_payload = &test_data::TEMPLATE_DATA[..];
 
-        for field in template {
-            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)
-                .unwrap();
+        // parsing process test
+        let template: Result<(&[u8], DataTemplate), ()> =
+            DataTemplate::from_bytes(&data_template_payload);
+        assert!(template.is_ok());
 
-            fields.push(flow_field);
-            rest = next;
-        }
+        // parsing result test
+        let (_rest, template): (&[u8], DataTemplate) = template.unwrap();
+        assert_eq!(template.flowset_id, 0);
+        assert_eq!(template.length, 92);
 
-        Ok((rest, fields))
+        assert_eq!(template.templates.len(), 1);
+        assert_eq!(template.templates[0].template_id, 1024);
+        assert_eq!(template.templates[0].field_count, 21);
+        assert_eq!(
+            template.templates[0].fields.len() as u16,
+            template.templates[0].field_count
+        );
+
+        // TODO: Field test
     }
 }

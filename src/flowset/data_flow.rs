@@ -1,5 +1,6 @@
+use super::{DataTemplate, Template};
 use field::FlowField;
-use super::{flowset_id, flowset_length, DataTemplate, Template};
+use util::take_u16;
 
 #[derive(Debug)]
 pub struct DataFlow {
@@ -33,8 +34,8 @@ impl DataFlow {
     pub fn from_bytes_notemplate(data: &[u8]) -> Result<(&[u8], DataFlow), ()> {
         debug!("Length of parsing data: {}", data.len());
 
-        let (rest, flowset_id) = flowset_id(&data).unwrap();
-        let (rest, length) = flowset_length(&rest).unwrap();
+        let (rest, flowset_id) = take_u16(&data).unwrap();
+        let (rest, length) = take_u16(&rest).unwrap();
         let length = length.unwrap().1;
         let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
@@ -50,17 +51,48 @@ impl DataFlow {
         ))
     }
 
-    fn get_template(flowset_id: u16, templates: &[DataTemplate]) -> Option<&DataTemplate> {
-        let template: Vec<&DataTemplate> = templates
-            .iter()
+    fn get_template(flowset_id: u16, templates: &[DataTemplate]) -> Option<&Template> {
+        // TODO: flat templates to Vec<Template> like object
+        let template: Vec<&Template> = templates
+            .into_iter()
+            .flat_map(|data_temp| &data_temp.templates)
             .filter(|temp| temp.template_id == flowset_id)
             .collect();
 
         if template.len() == 0 {
             None
         } else {
-            Some(&template[0])
+            Some(template[0])
         }
+    }
+
+    // TODO: extract Result<(u8, ~), ()> as someResult
+    fn parse_records<'a>(
+        template: &Template,
+        records_num: usize, // TODO: check max length
+        payload: &'a [u8],
+    ) -> Result<(&'a [u8], Vec<Vec<FlowField>>), ()> {
+        let mut records: Vec<Vec<FlowField>> = Vec::with_capacity(records_num);
+        let mut rest = payload;
+
+        for _ in 0..records_num {
+            let (next, fields) = template.parse_dataflow(rest).unwrap(); // Err
+            records.push(fields);
+            rest = next;
+        }
+
+        Ok((rest, records))
+    }
+
+    fn remove_padding(length: u16, template_len: u16, payload: &[u8]) -> &[u8] {
+        let padding = DataFlow::get_padding(length, template_len);
+        let mut rest = payload;
+
+        if padding > 0 {
+            rest = &rest[(padding as usize)..]
+        }
+
+        rest
     }
 
     pub fn from_bytes<'a>(
@@ -69,38 +101,26 @@ impl DataFlow {
     ) -> Result<(&'a [u8], DataFlow), ()> {
         debug!("Length of parsing data: {}", data.len());
 
-        let (rest, flowset_id) = flowset_id(&data).unwrap();
+        let (rest, flowset_id) = take_u16(&data).unwrap();
         let flowset_id = flowset_id.unwrap().1;
-        let (rest, length) = flowset_length(&rest).unwrap();
+        let (rest, length) = take_u16(&rest).unwrap();
         let length = length.unwrap().1;
 
         // TODO: need field parser for skipping padding
-        let template: Option<&DataTemplate> = DataFlow::get_template(flowset_id, templates);
+        let template = DataFlow::get_template(flowset_id, templates);
 
         match template {
             Some(template) => {
                 let template_len = template.get_template_len();
-                let records_num = DataFlow::get_record_num(length, template_len);
-                let mut records: Vec<Vec<FlowField>> = Vec::with_capacity(records_num);
-                let mut rest = rest;
-
-                for _ in 0..records_num {
-                    let (next, fields) = template.parse_dataflow(rest).unwrap();
-                    records.push(fields);
-                    rest = next;
-                }
-
-                let padding = DataFlow::get_padding(length, template_len);
-
-                if padding > 0 {
-                    rest = &rest[(padding as usize)..]
-                }
-
-                // Left bytes for future parsing?
-                Ok((
+                let (rest, records) = DataFlow::parse_records(
+                    template,
+                    DataFlow::get_record_num(length, template_len),
                     rest,
-                    DataFlow::new(flowset_id, length, None, Some(records)),
-                ))
+                ).unwrap();
+
+                let rest = DataFlow::remove_padding(length, template_len, rest);
+
+                Ok((rest, DataFlow::new(flowset_id, length, None, Some(records))))
             }
             None => {
                 // Return Err, None or bytes field?
@@ -116,5 +136,19 @@ impl DataFlow {
 
     fn get_padding(payload_len: u16, template_len: u16) -> u16 {
         payload_len - template_len * DataFlow::get_record_num(payload_len, template_len) as u16 - 4
+    }
+}
+
+#[cfg(test)]
+mod test_data_flow {
+    use super::DataFlow;
+    use flowset::test_data;
+
+    #[test]
+    fn test_data_flow() {
+        let packet_bytes = &test_data::DATAFLOW_DATA[..];
+
+        let res = DataFlow::from_bytes_notemplate(&packet_bytes);
+        assert!(res.is_ok());
     }
 }
