@@ -47,15 +47,12 @@ impl OptionTemplate {
 
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], OptionTemplate), ()> {
         let (rest, flowset_id) = take_u16(&data).unwrap();
-        let flowset_id = flowset_id.unwrap().1;
 
         if flowset_id == OPTION_FLOWSET_ID {
             let (rest, length) = take_u16(&rest).unwrap();
             let (rest, template_id) = take_u16(&rest).unwrap();
             let (rest, scope_len) = take_u16(&rest).unwrap();
-            let scope_len = scope_len.unwrap().1;
             let (rest, option_len) = take_u16(&rest).unwrap();
-            let option_len = option_len.unwrap().1;
             let (rest, scopes) =
                 TypeLengthField::take_from((scope_len / 4) as usize, rest).unwrap();
             let (rest, options) =
@@ -65,8 +62,8 @@ impl OptionTemplate {
                 rest,
                 OptionTemplate::new(
                     flowset_id,
-                    length.unwrap().1,
-                    template_id.unwrap().1,
+                    length,
+                    template_id,
                     scope_len,
                     option_len,
                     scopes,

@@ -27,15 +27,13 @@ pub enum FlowSet {
 impl FlowSet {
     // TODO: parse with template
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], Self), ()> {
-        let (_, id) = take_u16(&data).unwrap();
-        let id = id.unwrap().1;
+        let (_, id) = take_u16(&data).unwrap(); // num::IResult
 
         info!("parsed flowset id: {:?}", id);
 
         match id {
             TEMPLATE_FLOWSET_ID => {
-                // Err
-                let (next, template) = DataTemplate::from_bytes(&data).unwrap(); // TODO: use combinator
+                let (next, template) = DataTemplate::from_bytes(&data).unwrap(); // Err
                 debug!("parsed DataTemplate: {:?}", template);
                 Ok((next, FlowSet::DataTemplate(template)))
             }
@@ -52,7 +50,7 @@ impl FlowSet {
         }
     }
 
-    // TODO:
+    // TODO: impl
     pub fn to_vec(data: &[u8]) -> Result<(&[u8], Vec<Self>), ()> {
         let mut rest = data;
 

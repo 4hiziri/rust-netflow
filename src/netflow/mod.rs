@@ -39,9 +39,9 @@ impl NetFlow9 {
 
     pub fn from_bytes(payload: &[u8]) -> Result<Self, ()> {
         let (payload, version) = take_u16(payload).unwrap(); // Err
-        let version = version.unwrap().1;
 
         if version == 9 {
+            // num::IResult
             let (payload, count) = take_u16(payload).unwrap();
             let (payload, sys_uptime) = take_u32(payload).unwrap();
             let (payload, timestamp) = take_u32(payload).unwrap();
@@ -51,11 +51,11 @@ impl NetFlow9 {
 
             Ok(NetFlow9 {
                 version: version,
-                count: count.unwrap().1, // Err
-                sys_uptime: sys_uptime.unwrap().1,
-                timestamp: timestamp.unwrap().1,
-                flow_sequence: flow_sequence.unwrap().1,
-                source_id: source_id.unwrap().1,
+                count: count,
+                sys_uptime: sys_uptime,
+                timestamp: timestamp,
+                flow_sequence: flow_sequence,
+                source_id: source_id,
                 flow_sets: flow_sets,
             })
         } else {

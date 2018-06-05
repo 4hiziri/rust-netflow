@@ -22,15 +22,13 @@ impl DataTemplate {
 
     pub fn from_bytes(data: &[u8]) -> Result<(&[u8], DataTemplate), ()> {
         let (rest, flowset_id) = take_u16(&data).unwrap();
-        let flowset_id = flowset_id.unwrap().1;
         let (rest, flowset_length) = take_u16(&rest).unwrap();
-        let flowset_length = flowset_length.unwrap().1;
         let (rest, templates) = Template::to_vec(flowset_length - 4, &rest).unwrap();
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((rest, DataTemplate::new(flowset_length, templates)))
         } else {
-            Err(())
+            Err(()) // Err need compose?
         }
     }
 }

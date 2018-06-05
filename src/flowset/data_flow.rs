@@ -36,18 +36,12 @@ impl DataFlow {
 
         let (rest, flowset_id) = take_u16(&data).unwrap();
         let (rest, length) = take_u16(&rest).unwrap();
-        let length = length.unwrap().1;
         let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
 
         Ok((
             rest,
-            DataFlow::new(
-                flowset_id.unwrap().1,
-                length,
-                Some(record_bytes.to_vec()),
-                None,
-            ),
+            DataFlow::new(flowset_id, length, Some(record_bytes.to_vec()), None),
         ))
     }
 
@@ -102,9 +96,9 @@ impl DataFlow {
         debug!("Length of parsing data: {}", data.len());
 
         let (rest, flowset_id) = take_u16(&data).unwrap();
-        let flowset_id = flowset_id.unwrap().1;
+        let flowset_id = flowset_id;
         let (rest, length) = take_u16(&rest).unwrap();
-        let length = length.unwrap().1;
+        let length = length;
 
         // TODO: need field parser for skipping padding
         let template = DataFlow::get_template(flowset_id, templates);

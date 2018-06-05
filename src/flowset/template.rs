@@ -20,9 +20,8 @@ impl Template {
     }
 
     pub fn from_bytes(length: u16, data: &[u8]) -> Result<(&[u8], Self), ()> {
-        let (rest, template_id) = take_u16(&data).unwrap();
+        let (rest, template_id) = take_u16(&data).unwrap(); // Err
         let (rest, field_count) = take_u16(&rest).unwrap();
-        let field_count = field_count.unwrap().1;
 
         debug!("field_count is {}", field_count);
 
@@ -31,10 +30,7 @@ impl Template {
             let (rest, fields): (&[u8], Vec<TypeLengthField>) =
                 TypeLengthField::take_from(field_count as usize, &rest).unwrap(); // Err
 
-            Ok((
-                rest,
-                Template::new(template_id.unwrap().1, field_count, fields),
-            ))
+            Ok((rest, Template::new(template_id, field_count, fields)))
         } else {
             Err(())
         }
