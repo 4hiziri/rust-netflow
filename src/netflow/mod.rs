@@ -1,18 +1,15 @@
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod test_data;
+#[cfg(test)]
+mod tests;
 
-use nom;
-use nom::{be_u16, be_u32};
 use flowset::FlowSet;
+use util::{take_u16, take_u32};
 
 // TODO: impl method struct into bytes
+// TODO: impl Err
 
 // Netflow V9 -> Header + (Template* Option* Data*)
-
-named!(take_u16 <&[u8], nom::IResult<&[u8], u16>>, map!(take!(2), be_u16));
-named!(take_u32 <&[u8], nom::IResult<&[u8], u32>>, map!(take!(4), be_u32));
 
 // TODO: enum NetFlow or abstract with Netflow struct
 #[derive(Debug)]
@@ -32,7 +29,7 @@ impl NetFlow9 {
         let mut flowsets = Vec::<FlowSet>::new();
 
         while rest.len() != 0 {
-            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap();
+            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap(); // Err
             flowsets.push(flowset);
             rest = next;
         }
@@ -40,8 +37,8 @@ impl NetFlow9 {
         Ok(flowsets)
     }
 
-    pub fn from_bytes(payload: &[u8]) -> Result<NetFlow9, ()> {
-        let (payload, version) = take_u16(payload).unwrap();
+    pub fn from_bytes(payload: &[u8]) -> Result<Self, ()> {
+        let (payload, version) = take_u16(payload).unwrap(); // Err
         let version = version.unwrap().1;
 
         if version == 9 {
@@ -50,11 +47,11 @@ impl NetFlow9 {
             let (payload, timestamp) = take_u32(payload).unwrap();
             let (payload, flow_sequence) = take_u32(payload).unwrap();
             let (payload, source_id) = take_u32(payload).unwrap();
-            let flow_sets = NetFlow9::parse_flowsets(payload).unwrap();
+            let flow_sets = NetFlow9::parse_flowsets(payload).unwrap(); // Err
 
             Ok(NetFlow9 {
                 version: version,
-                count: count.unwrap().1,
+                count: count.unwrap().1, // Err
                 sys_uptime: sys_uptime.unwrap().1,
                 timestamp: timestamp.unwrap().1,
                 flow_sequence: flow_sequence.unwrap().1,
