@@ -4,7 +4,7 @@ mod flowset_tests;
 mod test_data;
 
 mod data_template;
-use self::data_template::*;
+pub use self::data_template::*;
 
 mod option_template;
 use self::option_template::*;
