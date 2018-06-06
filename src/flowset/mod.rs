@@ -12,10 +12,19 @@ use self::option_template::*;
 mod data_flow;
 use self::data_flow::*;
 
-mod template;
-use self::template::*;
+mod data_template_item;
+use self::data_template_item::*;
 
-use error::{Error, ParseResult};
+mod option_template_item;
+use self::option_template_item::*;
+
+mod record;
+use self::record::*;
+
+mod template_parser;
+use self::template_parser::*;
+
+use error::ParseResult;
 use util::take_u16;
 
 #[derive(Debug)]
@@ -27,7 +36,7 @@ pub enum FlowSet {
 
 impl FlowSet {
     // TODO: parse with template
-    pub fn from_bytes(data: &[u8]) -> ParseResult<Self> {
+    pub fn from_bytes(data: &[u8]) -> ParseResult<FlowSet> {
         let (_, id) = take_u16(&data).unwrap(); // num::IResult
 
         info!("parsed flowset id: {:?}", id);
@@ -51,22 +60,76 @@ impl FlowSet {
         }
     }
 
-    // TODO: impl
-    pub fn to_vec(data: &[u8]) -> ParseResult<Vec<Self>> {
+    pub fn to_vec<'a>(data: &'a [u8]) -> ParseResult<'a, Vec<FlowSet>> {
         let mut rest = data;
+        let mut sets: Vec<FlowSet> = Vec::new();
 
         while rest.len() > 0 {
-            let (next, flowset) = FlowSet::from_bytes(&data).unwrap();
-
-            match flowset {
-                FlowSet::DataTemplate(template) => {}
-                FlowSet::OptionTemplate(template) => {}
-                FlowSet::DataFlow(template) => {}
-            }
-
+            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap();
+            sets.push(flowset);
             rest = next;
         }
 
-        Err(Error::InvalidLength)
+        Ok((rest, sets))
+    }
+}
+
+#[cfg(test)]
+mod test_flowset {
+    use super::FlowSet;
+    use flowset::test_data;
+
+    #[test]
+    fn test_frombytes() {
+        let test_data = test_data::FLOWSET_DATA;
+        let set = FlowSet::from_bytes(&test_data);
+        assert!(set.is_ok());
+        let (_rest, set) = set.unwrap();
+
+        assert!(match set {
+            FlowSet::DataTemplate(_) => true,
+            _ => false,
+        });
+    }
+
+    #[test]
+    fn test_to_vec() {
+        let test_data = test_data::MULTI_FLOWSET_DATA;
+        let sets = FlowSet::to_vec(&test_data);
+        assert!(sets.is_ok());
+        let (rest, sets) = sets.unwrap();
+
+        assert_eq!(rest.len(), 0);
+        assert_eq!(sets.len(), 7);
+
+        for i in 0..4 {
+            assert!(
+                match sets[i] {
+                    FlowSet::DataTemplate(_) => true,
+                    _ => false,
+                },
+                "failed at {}",
+                i
+            );
+        }
+
+        assert!(
+            match sets[4] {
+                FlowSet::OptionTemplate(_) => true,
+                _ => false,
+            },
+            "Failed at 4"
+        );
+
+        for i in 5..7 {
+            assert!(
+                match sets[i] {
+                    FlowSet::DataFlow(_) => true,
+                    _ => false,
+                },
+                "failed at {}",
+                i
+            );
+        }
     }
 }

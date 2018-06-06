@@ -8,7 +8,6 @@ use flowset::FlowSet;
 use util::{take_u16, take_u32};
 
 // TODO: impl method struct into bytes
-// TODO: impl Err
 
 // Netflow V9 -> Header + (Template* Option* Data*)
 
@@ -17,7 +16,7 @@ use util::{take_u16, take_u32};
 pub struct NetFlow9 {
     pub version: u16,
     pub count: u16,
-    pub sys_uptime: u32, // FIXME: replace proper type like time?
+    pub sys_uptime: u32, // TODO: replace proper type like time?
     pub timestamp: u32,
     pub flow_sequence: u32,
     pub source_id: u32,
@@ -25,30 +24,16 @@ pub struct NetFlow9 {
 }
 
 impl NetFlow9 {
-    fn parse_flowsets(data: &[u8]) -> Result<Vec<FlowSet>, Error> {
-        let mut rest: &[u8] = data;
-        let mut flowsets = Vec::<FlowSet>::new();
-
-        while rest.len() != 0 {
-            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap(); // Err
-            flowsets.push(flowset);
-            rest = next;
-        }
-
-        Ok(flowsets)
-    }
-
     pub fn from_bytes(payload: &[u8]) -> Result<Self, Error> {
-        let (payload, version) = take_u16(payload).unwrap(); // Err
+        let (rest, version) = take_u16(payload).unwrap();
 
         if version == 9 {
-            // num::IResult
-            let (payload, count) = take_u16(payload).unwrap();
-            let (payload, sys_uptime) = take_u32(payload).unwrap();
-            let (payload, timestamp) = take_u32(payload).unwrap();
-            let (payload, flow_sequence) = take_u32(payload).unwrap();
-            let (payload, source_id) = take_u32(payload).unwrap();
-            let flow_sets = NetFlow9::parse_flowsets(payload).unwrap(); // Err
+            let (rest, count) = take_u16(rest).unwrap();
+            let (rest, sys_uptime) = take_u32(rest).unwrap();
+            let (rest, timestamp) = take_u32(rest).unwrap();
+            let (rest, flow_sequence) = take_u32(rest).unwrap();
+            let (rest, source_id) = take_u32(rest).unwrap();
+            let (_rest, flow_sets) = FlowSet::to_vec(rest).unwrap();
 
             Ok(NetFlow9 {
                 version: version,
@@ -62,5 +47,56 @@ impl NetFlow9 {
         } else {
             Err(Error::InvalidFieldValue)
         }
+    }
+}
+
+#[cfg(test)]
+mod test_netflow {
+    use super::test_data;
+    use netflow::*;
+
+    // TODO: can use macro?
+    fn is_template(flowset: &FlowSet) -> bool {
+        match flowset {
+            &FlowSet::DataTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    fn is_option(flowset: &FlowSet) -> bool {
+        match flowset {
+            &FlowSet::OptionTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    fn is_dataflow(flowset: &FlowSet) -> bool {
+        match flowset {
+            &FlowSet::DataFlow(_) => true,
+            _ => false,
+        }
+    }
+
+    // TODO: extract as combination test
+    #[test]
+    fn test_netflow9() {
+        let packet_bytes = &test_data::NETFLOWV9_DATA[..];
+        let res = NetFlow9::from_bytes(&packet_bytes);
+        assert!(res.is_ok());
+
+        let netflow = res.unwrap();
+        assert_eq!(netflow.version, 9);
+        assert_eq!(netflow.count, 7);
+        assert_eq!(netflow.sys_uptime, 5502099);
+        assert_eq!(netflow.timestamp, 1523936618);
+        assert_eq!(netflow.flow_sequence, 883);
+        assert_eq!(netflow.flow_sets.len(), 7);
+        assert!(is_template(&netflow.flow_sets[0]));
+        assert!(is_template(&netflow.flow_sets[1]));
+        assert!(is_template(&netflow.flow_sets[2]));
+        assert!(is_template(&netflow.flow_sets[3]));
+        assert!(is_option(&netflow.flow_sets[4]));
+        assert!(is_dataflow(&netflow.flow_sets[5]));
+        assert!(is_dataflow(&netflow.flow_sets[6]));
     }
 }

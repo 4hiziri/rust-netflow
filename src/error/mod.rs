@@ -11,6 +11,7 @@ pub enum Error {
     ParseError(nom::Err),
     InvalidLength,
     InvalidFieldValue, // TODO: contain wrong field name and val
+    TemplateNotFound,
 }
 
 impl error::Error for Error {
@@ -19,6 +20,7 @@ impl error::Error for Error {
             Error::ParseError(ref err) => err.description(),
             Error::InvalidLength => "Payload length is invalid",
             Error::InvalidFieldValue => "Field value is invalid",
+            Error::TemplateNotFound => "Template is not found",
         }
     }
 }
@@ -29,6 +31,7 @@ impl Display for Error {
             Error::ParseError(err) => write!(f, "Parse error: {}", err),
             Error::InvalidLength => write!(f, "Payload length is invalid"),
             Error::InvalidFieldValue => write!(f, "Field value is invalid"),
+            Error::TemplateNotFound => write!(f, "Template is not found"),
         }
     }
 }

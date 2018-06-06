@@ -6,9 +6,9 @@ use flowset::*;
 fn test_dataflow_with_template() {
     let template = DataTemplate::from_bytes(&test_data::TEMPLATE_AND_DATA.0);
     assert!(template.is_ok());
-    let template = template.unwrap().1;
+    let template: DataTemplate = template.unwrap().1;
 
-    let dataflow = DataFlow::from_bytes(&test_data::TEMPLATE_AND_DATA.1, &[template]);
+    let dataflow = DataFlow::from_bytes(&test_data::TEMPLATE_AND_DATA.1, &template.templates);
     assert!(dataflow.is_ok());
     let dataflow: DataFlow = dataflow.unwrap().1;
 

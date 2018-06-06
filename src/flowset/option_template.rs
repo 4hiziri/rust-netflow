@@ -1,17 +1,15 @@
-use super::Template;
+use super::OptionTemplateItem;
 use error::{Error, ParseResult};
 use field::TypeLengthField;
 use util::take_u16;
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
 
-// TODO: change more easy struct
 #[derive(Debug)]
 pub struct OptionTemplate {
     pub flowset_id: u16,
     pub length: u16,
-    pub scope_template: Template,
-    pub option_template: Template,
+    pub template: OptionTemplateItem,
 }
 
 impl OptionTemplate {
@@ -23,15 +21,14 @@ impl OptionTemplate {
         opt_len: u16,
         scopes: Vec<TypeLengthField>,
         options: Vec<TypeLengthField>,
-    ) -> Self {
-        let scope = Template::new(template_id, scope_len / 4, scopes);
-        let option = Template::new(template_id, opt_len / 4, options);
+    ) -> OptionTemplate {
+        let template =
+            OptionTemplateItem::new(template_id, scope_len / 4, opt_len / 4, scopes, options);
 
         OptionTemplate {
             flowset_id: flowset_id,
             length: length,
-            scope_template: scope,
-            option_template: option,
+            template: template,
         }
     }
 
@@ -80,10 +77,9 @@ mod test_option_template {
         let (_rest, option): (&[u8], OptionTemplate) = option.unwrap();
         assert_eq!(option.flowset_id, 1);
         assert_eq!(option.length, 26);
-        assert_eq!(option.scope_template.template_id, 4096);
-        assert_eq!(option.option_template.template_id, 4096);
-        assert_eq!(option.scope_template.field_count, 1);
-        assert_eq!(option.option_template.field_count, 3);
+        assert_eq!(option.template.template_id, 4096);
+        assert_eq!(option.template.scope_count, 1);
+        assert_eq!(option.template.option_count, 3);
     }
 
 }

@@ -1,4 +1,4 @@
-use super::Template;
+use super::DataTemplateItem;
 use error::{Error, ParseResult};
 use util::take_u16;
 
@@ -9,11 +9,11 @@ pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 pub struct DataTemplate {
     pub flowset_id: u16,
     pub length: u16,
-    pub templates: Vec<Template>,
+    pub templates: Vec<DataTemplateItem>,
 }
 
 impl DataTemplate {
-    pub fn new(length: u16, templates: Vec<Template>) -> DataTemplate {
+    pub fn new(length: u16, templates: Vec<DataTemplateItem>) -> DataTemplate {
         DataTemplate {
             flowset_id: 0, // DataTemplate's flowset_id is 0
             length: length,
@@ -24,7 +24,7 @@ impl DataTemplate {
     pub fn from_bytes(data: &[u8]) -> ParseResult<DataTemplate> {
         let (rest, flowset_id) = take_u16(&data).unwrap();
         let (rest, flowset_length) = take_u16(&rest).unwrap();
-        let (rest, templates) = Template::to_vec(flowset_length - 4, &rest).unwrap();
+        let (rest, templates) = DataTemplateItem::to_vec(flowset_length - 4, &rest).unwrap();
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((rest, DataTemplate::new(flowset_length, templates)))

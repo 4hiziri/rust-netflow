@@ -17,10 +17,12 @@ pub mod ScopeTypes {
 }
 
 mod field_value;
-mod mac_addr;
-mod type_length_field;
 pub use self::field_value::*;
+
+mod mac_addr;
 pub use self::mac_addr::*;
+
+mod type_length_field;
 pub use self::type_length_field::*;
 
 #[derive(Debug, Clone)]
