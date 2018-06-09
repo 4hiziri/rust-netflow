@@ -70,6 +70,8 @@ impl FlowSet {
             rest = next;
         }
 
+        // TODO: apply template?
+
         Ok((rest, sets))
     }
 }
