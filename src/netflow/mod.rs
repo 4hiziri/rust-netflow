@@ -5,7 +5,7 @@ mod tests;
 
 use error::Error;
 use flowset::FlowSet;
-use util::{take_u16, take_u32};
+use util::{take_u16, take_u32, u16_into, u32_into};
 
 // TODO: impl method struct into bytes
 
@@ -47,6 +47,20 @@ impl NetFlow9 {
         } else {
             Err(Error::InvalidFieldValue)
         }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut u16_buf = [0u8; 2];
+        let mut u32_buf = [0u8; 4];
+
+        u16_into(self.version, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_into(self.count, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        bytes
     }
 }
 
