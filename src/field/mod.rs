@@ -25,6 +25,9 @@ pub use self::mac_addr::*;
 mod type_length_field;
 pub use self::type_length_field::*;
 
+#[cfg(test)]
+mod test_data;
+
 #[derive(Debug, Clone)]
 pub struct FlowField {
     type_id: u16,
@@ -54,5 +57,9 @@ impl FlowField {
         } else {
             Err(())
         }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.value.to_bytes(self.length)
     }
 }

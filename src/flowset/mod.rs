@@ -74,6 +74,14 @@ impl FlowSet {
 
         Ok((rest, sets))
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            FlowSet::DataTemplate(template) => template.to_bytes(),
+            FlowSet::OptionTemplate(template) => template.to_bytes(),
+            FlowSet::DataFlow(dataflow) => dataflow.to_bytes(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -133,5 +141,14 @@ mod test_flowset {
                 i
             );
         }
+    }
+
+    #[test]
+    fn test_to_bytes() {
+        let test_data = test_data::FLOWSET_DATA;
+        let (_, set) = FlowSet::from_bytes(&test_data).unwrap();
+        let bytes = set.to_bytes();
+
+        assert_eq!(&bytes.as_slice(), &test_data.as_ref());
     }
 }

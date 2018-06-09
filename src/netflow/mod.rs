@@ -5,12 +5,13 @@ mod tests;
 
 use error::Error;
 use flowset::FlowSet;
-use util::{take_u16, take_u32, u16_into, u32_into};
+use util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
 
 // TODO: impl method struct into bytes
 
 // Netflow V9 -> Header + (Template* Option* Data*)
 
+// TODO: need mut?
 // TODO: enum NetFlow or abstract with Netflow struct
 #[derive(Debug)]
 pub struct NetFlow9 {
@@ -54,11 +55,29 @@ impl NetFlow9 {
         let mut u16_buf = [0u8; 2];
         let mut u32_buf = [0u8; 4];
 
-        u16_into(self.version, &mut u16_buf);
+        u16_to_bytes(self.version, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
 
-        u16_into(self.count, &mut u16_buf);
+        u16_to_bytes(self.count, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
+
+        u32_to_bytes(self.sys_uptime, &mut u32_buf);
+        bytes.append(&mut u32_buf.to_vec());
+
+        u32_to_bytes(self.timestamp, &mut u32_buf);
+        bytes.append(&mut u32_buf.to_vec());
+
+        u32_to_bytes(self.flow_sequence, &mut u32_buf);
+        bytes.append(&mut u32_buf.to_vec());
+
+        u32_to_bytes(self.source_id, &mut u32_buf);
+        bytes.append(&mut u32_buf.to_vec());
+
+        for flowset in &self.flow_sets {
+            bytes.append(&mut flowset.to_bytes());
+        }
+
+        // TODO: padding
 
         bytes
     }
@@ -112,5 +131,14 @@ mod test_netflow {
         assert!(is_option(&netflow.flow_sets[4]));
         assert!(is_dataflow(&netflow.flow_sets[5]));
         assert!(is_dataflow(&netflow.flow_sets[6]));
+    }
+
+    #[test]
+    fn test_to_bytes() {
+        let packet_bytes = &test_data::NETFLOWV9_DATA[..];
+        let res = NetFlow9::from_bytes(&packet_bytes).unwrap();
+
+        let bytes = res.to_bytes();
+        assert_eq!(&bytes.as_slice(), &packet_bytes.as_ref());
     }
 }

@@ -14,6 +14,14 @@ impl Record {
     pub fn make_option(scopes: Vec<FlowField>, options: Vec<FlowField>) -> Record {
         Record::OptionData(OptionRecord::new(scopes, options))
     }
+
+    // TODO: need test
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            Record::Data(data) => data.to_bytes(),
+            Record::OptionData(option) => option.to_bytes(),
+        }
+    }
 }
 
 // TODO: accessing method
@@ -25,6 +33,16 @@ pub struct DataRecord {
 impl DataRecord {
     fn new(fields: Vec<FlowField>) -> DataRecord {
         DataRecord { fields: fields }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        for field in &self.fields {
+            bytes.append(&mut field.to_bytes());
+        }
+
+        bytes
     }
 }
 
@@ -40,5 +58,19 @@ impl OptionRecord {
             scope_fields: scopes,
             option_fields: options,
         }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        for field in &self.scope_fields {
+            bytes.append(&mut field.to_bytes());
+        }
+
+        for field in &self.option_fields {
+            bytes.append(&mut field.to_bytes());
+        }
+
+        bytes
     }
 }

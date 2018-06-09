@@ -1,7 +1,7 @@
 use error::{Error, ParseResult};
 use field::{FlowField, TypeLengthField};
 use flowset::{Record, TemplateParser};
-use util::take_u16;
+use util::{take_u16, u16_to_bytes};
 
 #[derive(Debug)]
 pub struct DataTemplateItem {
@@ -48,7 +48,7 @@ impl DataTemplateItem {
         self.field_count * 4
     }
 
-    pub fn to_vec(length: u16, data: &[u8]) -> ParseResult<Vec<Self>> {
+    pub fn to_vec(length: u16, data: &[u8]) -> ParseResult<Vec<DataTemplateItem>> {
         let mut templates: Vec<Self> = Vec::new();
         let mut rest_length = length;
         let mut rest = data;
@@ -63,6 +63,25 @@ impl DataTemplateItem {
         }
 
         Ok((rest, templates))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut u16_buf = [0u8; 2];
+
+        u16_to_bytes(self.template_id, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_to_bytes(self.field_count, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        for field in &self.fields {
+            bytes.append(&mut field.to_bytes());
+        }
+
+        // data template doesn't have padding
+
+        bytes
     }
 }
 
@@ -136,5 +155,14 @@ mod data_template_test {
 
         let rec = temp.parse_dataflow(&dataflow);
         assert!(rec.is_ok());
+    }
+
+    #[test]
+    fn test_to_bytes() {
+        let (len, data) = test_data::TEMPLATE_FIELDS;
+        let (_rest, temp) = DataTemplateItem::from_bytes(len, &data).unwrap();
+        let bytes = temp.to_bytes();
+
+        assert_eq!(&bytes.as_slice(), &data.as_ref());
     }
 }

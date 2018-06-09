@@ -30,17 +30,19 @@ pub fn take_u128(i: &[u8]) -> Result<(&[u8], u128), ()> {
     }
 }
 
-pub fn u16_into(src: u16, dst: &mut [u8; 2]) {
+pub fn u16_to_bytes(src: u16, dst: &mut [u8; 2]) {
     BigEndian::write_u16_into(&[src], dst);
 }
 
-pub fn u32_into(src: u32, dst: &mut [u8; 4]) {
+pub fn u32_to_bytes(src: u32, dst: &mut [u8; 4]) {
     BigEndian::write_u32_into(&[src], dst);
 }
-pub fn u64_into(src: u64, dst: &mut [u8; 8]) {
+
+pub fn u64_to_bytes(src: u64, dst: &mut [u8; 8]) {
     BigEndian::write_u64_into(&[src], dst);
 }
-pub fn u128_into(src: u128, dst: &mut [u8; 16]) {
+
+pub fn u128_to_bytes(src: u128, dst: &mut [u8; 16]) {
     for i in 0..16 {
         dst[15 - i] = (src >> (8 * i) & 0xff) as u8;
     }
@@ -68,21 +70,21 @@ mod test_util {
     }
 
     #[test]
-    fn test_into() {
+    fn test_to_bytes() {
         let mut dst16 = [0u8; 2];
-        util::u16_into(0x0123, &mut dst16);
+        util::u16_to_bytes(0x0123, &mut dst16);
         assert_eq!(dst16, [0x01, 0x23]);
 
         let mut dst32 = [0u8; 4];
-        util::u32_into(0x01234567, &mut dst32);
+        util::u32_to_bytes(0x01234567, &mut dst32);
         assert_eq!(dst32, [0x01, 0x23, 0x45, 0x67]);
 
         let mut dst64 = [0u8; 8];
-        util::u64_into(0x0123456789abcdef, &mut dst64);
+        util::u64_to_bytes(0x0123456789abcdef, &mut dst64);
         assert_eq!(dst64, [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
 
         let mut dst128 = [0u8; 16];
-        util::u128_into(0x0123456789abcdef0123456789abcdef, &mut dst128);
+        util::u128_to_bytes(0x0123456789abcdef0123456789abcdef, &mut dst128);
         assert_eq!(
             dst128,
             [

@@ -1,10 +1,9 @@
 use super::DataTemplateItem;
 use error::{Error, ParseResult};
-use util::take_u16;
+use util::{take_u16, u16_to_bytes};
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 
-// TODO: need mut?
 #[derive(Debug)]
 pub struct DataTemplate {
     pub flowset_id: u16,
@@ -31,6 +30,23 @@ impl DataTemplate {
         } else {
             Err(Error::InvalidLength)
         }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut u16_buf = [0u8; 2];
+
+        u16_to_bytes(self.flowset_id, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_to_bytes(self.length, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        for template in &self.templates {
+            bytes.append(&mut template.to_bytes());
+        }
+
+        bytes
     }
 }
 
@@ -62,5 +78,14 @@ mod data_template_test {
         );
 
         // TODO: Field test
+    }
+
+    #[test]
+    fn test_to_bytes() {
+        let test_data = &test_data::TEMPLATE_DATA[..];
+        let (_, template) = DataTemplate::from_bytes(&test_data).unwrap();
+        let bytes = template.to_bytes();
+
+        assert_eq!(&bytes.as_slice(), &test_data);
     }
 }

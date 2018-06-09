@@ -2,7 +2,10 @@ use super::MacAddr;
 use std::collections::HashSet;
 use std::convert::From;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use util::{take_u128, take_u16, take_u32, take_u64};
+use util::{
+    take_u128, take_u16, take_u32, take_u64, u128_to_bytes, u16_to_bytes, u32_to_bytes,
+    u64_to_bytes,
+};
 
 // research types
 // 1. flexible length num, length = N bytes
@@ -213,6 +216,18 @@ impl FieldValue {
             FieldValue::ByteArray(value.to_vec())
         }
     }
+
+    pub fn to_bytes(&self, length: u16) -> Vec<u8> {
+        match &self {
+            FieldValue::NumField(uint) => uint.to_bytes(length),
+            FieldValue::ByteArray(array) => array.to_vec(),
+            FieldValue::Ipv4Addr(ipv4) => ipv4.octets().to_vec(),
+            FieldValue::Ipv6Addr(ipv6) => ipv6.octets().to_vec(),
+            FieldValue::MacAddr(mac) => mac.octets().to_vec(),
+            FieldValue::String(s) => s.clone().into_bytes(), // TODO: I think it will be ok, but should check byte order.
+            FieldValue::Unknown(array) => array.to_vec(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -246,6 +261,56 @@ impl UInt {
         } else {
             // TODO: need error?
             UInt::UIntFlex(bytes.to_vec())
+        }
+    }
+
+    fn validate_length(buf: &[u8], length: usize) -> Vec<u8> {
+        let buf_len = buf.len();
+
+        if buf_len > length {
+            buf[(buf_len - length)..].to_vec()
+        } else if buf_len < length {
+            let mut bytes = Vec::with_capacity(length);
+
+            for _ in 0..(length - buf_len) {
+                bytes.push(0); // FIXME: should return error
+            }
+
+            bytes.append(&mut buf.to_vec());
+
+            bytes
+        } else {
+            buf.to_vec()
+        }
+    }
+
+    pub fn to_bytes(&self, length: u16) -> Vec<u8> {
+        let length = length as usize;
+
+        // TODO: check length and type matching, but need raise error
+        match &self {
+            UInt::UInt8(num) => UInt::validate_length(&[*num], length),
+            UInt::UInt16(num) => {
+                let mut buf = [0u8; 2];
+                u16_to_bytes(*num, &mut buf);
+                UInt::validate_length(&buf, length)
+            }
+            UInt::UInt32(num) => {
+                let mut buf = [0u8; 4];
+                u32_to_bytes(*num, &mut buf);
+                UInt::validate_length(&buf, length)
+            }
+            UInt::UInt64(num) => {
+                let mut buf = [0u8; 8];
+                u64_to_bytes(*num, &mut buf);
+                UInt::validate_length(&buf, length)
+            }
+            UInt::UInt128(num) => {
+                let mut buf = [0u8; 16];
+                u128_to_bytes(*num, &mut buf);
+                UInt::validate_length(&buf, length)
+            }
+            UInt::UIntFlex(array) => UInt::validate_length(&array, length),
         }
     }
 }

@@ -1,7 +1,7 @@
 use super::OptionTemplateItem;
 use error::{Error, ParseResult};
 use field::TypeLengthField;
-use util::take_u16;
+use util::{take_u16, u16_to_bytes};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
 
@@ -59,6 +59,23 @@ impl OptionTemplate {
             Err(Error::InvalidLength)
         }
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut u16_buf = [0u8; 2];
+
+        u16_to_bytes(self.flowset_id, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_to_bytes(self.length, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        bytes.append(&mut self.template.to_bytes());
+
+        // TODO: padding
+
+        bytes
+    }
 }
 
 #[cfg(test)]
@@ -70,7 +87,6 @@ mod test_option_template {
     #[test]
     fn test_option_template() {
         let packet_bytes = &test_data::OPTION_DATA[..];
-
         let option: ParseResult<OptionTemplate> = OptionTemplate::from_bytes(&packet_bytes);
         assert!(option.is_ok());
 
@@ -82,4 +98,12 @@ mod test_option_template {
         assert_eq!(option.template.option_count, 3);
     }
 
+    #[test]
+    fn test_to_bytes() {
+        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (_rest, option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
+        let bytes = option.to_bytes();
+
+        assert_eq!(&bytes.as_slice(), &packet_bytes);
+    }
 }

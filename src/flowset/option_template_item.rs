@@ -1,7 +1,7 @@
 use error::{Error, ParseResult};
 use field::{FlowField, TypeLengthField};
 use flowset::{Record, TemplateParser};
-use util::take_u16;
+use util::{take_u16, u16_to_bytes};
 
 #[derive(Debug)]
 pub struct OptionTemplateItem {
@@ -81,6 +81,30 @@ impl OptionTemplateItem {
         }
 
         Ok((rest, templates))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut u16_buf = [0u8; 2];
+
+        u16_to_bytes(self.template_id, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_to_bytes(self.scope_count * 4, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        u16_to_bytes(self.option_count * 4, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        for scope in &self.scopes {
+            bytes.append(&mut scope.to_bytes());
+        }
+
+        for option in &self.options {
+            bytes.append(&mut option.to_bytes());
+        }
+
+        bytes
     }
 }
 
@@ -175,5 +199,14 @@ mod option_template_test {
         let record = temp.parse_dataflow(&dataflow);
         assert!(record.is_ok());
         // TODO: check field
+    }
+
+    #[test]
+    fn test_to_bytes() {
+        let (len, data) = test_data::OPTION_TEMPLATE_ITEM;
+        let (_rest, temp) = OptionTemplateItem::from_bytes(len, &data).unwrap();
+        let bytes = temp.to_bytes();
+
+        assert_eq!(&bytes.as_slice(), &data);
     }
 }
