@@ -72,7 +72,10 @@ impl OptionTemplate {
 
         bytes.append(&mut self.template.to_bytes());
 
-        // TODO: padding
+        // padding
+        // option template must be over 2 bytem
+        bytes.push(0);
+        bytes.push(0);
 
         bytes
     }

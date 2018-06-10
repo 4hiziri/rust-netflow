@@ -10,8 +10,6 @@ pub struct DataFlow {
     pub records: Option<Vec<Record>>,
 }
 
-// TODO: improve poor struct, make records and record_bytes convert implicity
-
 // TODO: impl search or map like access API
 
 impl DataFlow {
@@ -124,6 +122,14 @@ impl DataFlow {
             None => bytes.append(&mut self.record_bytes.to_vec()),
         };
 
+        // padding
+        if bytes.len() % 4 != 0 {
+            let padding = 4 - bytes.len() % 4;
+            for _ in 0..padding {
+                bytes.push(0);
+            }
+        }
+
         bytes
     }
 }
@@ -131,7 +137,7 @@ impl DataFlow {
 #[cfg(test)]
 mod test_data_flow {
     use super::DataFlow;
-    use flowset::{test_data, DataTemplate, DataTemplateItem};
+    use flowset::{test_data, DataTemplate};
 
     #[test]
     fn test_dataflow_no_template() {
