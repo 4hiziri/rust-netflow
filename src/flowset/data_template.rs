@@ -46,6 +46,8 @@ impl DataTemplate {
             bytes.append(&mut template.to_bytes());
         }
 
+        debug!("Bytes length: {:?}", bytes.len());
+
         bytes
     }
 }
@@ -86,6 +88,18 @@ mod data_template_test {
         let (_, template) = DataTemplate::from_bytes(&test_data).unwrap();
         let bytes = template.to_bytes();
 
+        assert_eq!(bytes.len() % 4, 0);
         assert_eq!(&bytes.as_slice(), &test_data);
+    }
+
+    #[test]
+    fn test_convert() {
+        let test_data = &test_data::TEMPLATE_DATA[..];
+        let (_, template) = DataTemplate::from_bytes(&test_data).unwrap();
+        let bytes = template.to_bytes();
+
+        let (_, template) = DataTemplate::from_bytes(&bytes).unwrap();
+        let re_bytes = template.to_bytes();
+        assert_eq!(re_bytes, bytes);
     }
 }

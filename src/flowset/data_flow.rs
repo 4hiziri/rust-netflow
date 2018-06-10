@@ -122,6 +122,8 @@ impl DataFlow {
             None => bytes.append(&mut self.record_bytes.to_vec()),
         };
 
+        debug!("Bytes length before padding: {:?}", bytes.len());
+
         // padding
         if bytes.len() % 4 != 0 {
             let padding = 4 - bytes.len() % 4;
@@ -143,16 +145,18 @@ mod test_data_flow {
     fn test_dataflow_no_template() {
         let packet_bytes = test_data::DATAFLOW_DATA;
         let res = DataFlow::from_bytes_notemplate(&packet_bytes);
+
         assert!(res.is_ok());
     }
 
     #[test]
     fn test_dataflow_with_template() {
-        let template = DataTemplate::from_bytes(&test_data::TEMPLATE_AND_DATA.0);
+        let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
+        let template = DataTemplate::from_bytes(&test_template);
         assert!(template.is_ok());
         let template: DataTemplate = template.unwrap().1;
 
-        let dataflow = DataFlow::from_bytes(&test_data::TEMPLATE_AND_DATA.1, &template.templates);
+        let dataflow = DataFlow::from_bytes(&testdata, &template.templates);
         assert!(dataflow.is_ok());
         let dataflow: DataFlow = dataflow.unwrap().1;
 
@@ -166,23 +170,29 @@ mod test_data_flow {
 
     #[test]
     fn test_to_bytes() {
-        // {
-        //     let testdata = test_data::DATAFLOW_DATA;
-        //     let (_, dataflow) = DataFlow::from_bytes_notemplate(&testdata).unwrap();
-        //     let bytes = dataflow.to_bytes();
-        //     assert_eq!(&bytes.as_slice(), &testdata.as_ref());
-        // }
+        let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
+        let template = DataTemplate::from_bytes(&test_template).unwrap().1;
+        let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
+            .unwrap()
+            .1;
+        let bytes = dataflow.to_bytes();
 
-        {
-            let testdata = test_data::TEMPLATE_AND_DATA.1;
-            let template = DataTemplate::from_bytes(&test_data::TEMPLATE_AND_DATA.0)
-                .unwrap()
-                .1;
-            let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
-                .unwrap()
-                .1;
-            let bytes = dataflow.to_bytes();
-            assert_eq!(&bytes.as_slice(), &testdata.as_ref());
-        }
+        assert_eq!(bytes.len() % 4, 0);
+        assert_eq!(&bytes.as_slice(), &testdata.as_ref());
+    }
+
+    #[test]
+    fn test_convert() {
+        let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
+        let template = DataTemplate::from_bytes(&test_template).unwrap().1;
+        let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
+            .unwrap()
+            .1;
+        let bytes = dataflow.to_bytes();
+
+        let dataflow = DataFlow::from_bytes(&bytes, &template.templates).unwrap().1;
+        let re_bytes = dataflow.to_bytes();
+
+        assert_eq!(re_bytes, bytes);
     }
 }

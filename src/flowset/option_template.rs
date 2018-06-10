@@ -72,6 +72,7 @@ impl OptionTemplate {
 
         bytes.append(&mut self.template.to_bytes());
 
+        debug!("Bytes length before padding: {:?}", bytes.len());
         // padding
         // option template must be over 2 bytem
         bytes.push(0);
@@ -103,10 +104,24 @@ mod test_option_template {
 
     #[test]
     fn test_to_bytes() {
+        // TODO: check padding specification
         let packet_bytes = &test_data::OPTION_DATA[..];
         let (_rest, option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
         let bytes = option.to_bytes();
 
+        assert_eq!(bytes.len() % 4, 0);
         assert_eq!(&bytes.as_slice(), &packet_bytes);
+    }
+
+    #[test]
+    fn test_convert() {
+        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (_rest, option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
+        let bytes = option.to_bytes();
+
+        let (_rest, option) = OptionTemplate::from_bytes(&bytes).unwrap();
+        let re_bytes = option.to_bytes();
+
+        assert_eq!(re_bytes, bytes);
     }
 }
