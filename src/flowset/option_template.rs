@@ -9,7 +9,7 @@ pub const OPTION_FLOWSET_ID: u16 = 1;
 pub struct OptionTemplate {
     pub flowset_id: u16,
     pub length: u16,
-    pub template: OptionTemplateItem,
+    pub templates: OptionTemplateItem,
 }
 
 impl OptionTemplate {
@@ -28,7 +28,7 @@ impl OptionTemplate {
         OptionTemplate {
             flowset_id: flowset_id,
             length: length,
-            template: template,
+            templates: template,
         }
     }
 
@@ -70,7 +70,7 @@ impl OptionTemplate {
         u16_to_bytes(self.length, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
 
-        bytes.append(&mut self.template.to_bytes());
+        bytes.append(&mut self.templates.to_bytes());
 
         debug!("Bytes length before padding: {:?}", bytes.len());
         // padding
@@ -97,9 +97,9 @@ mod test_option_template {
         let (_rest, option): (&[u8], OptionTemplate) = option.unwrap();
         assert_eq!(option.flowset_id, 1);
         assert_eq!(option.length, 26);
-        assert_eq!(option.template.template_id, 4096);
-        assert_eq!(option.template.scope_count, 1);
-        assert_eq!(option.template.option_count, 3);
+        assert_eq!(option.templates.template_id, 4096);
+        assert_eq!(option.templates.scope_count, 1);
+        assert_eq!(option.templates.option_count, 3);
     }
 
     #[test]
