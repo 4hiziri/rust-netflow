@@ -12,11 +12,11 @@ use self::option_template::*;
 mod data_flow;
 use self::data_flow::*;
 
-pub mod data_template_item;
-use self::data_template_item::*;
+mod data_template_item;
+pub use self::data_template_item::*;
 
 mod option_template_item;
-use self::option_template_item::*;
+pub use self::option_template_item::*;
 
 mod record;
 use self::record::*;
