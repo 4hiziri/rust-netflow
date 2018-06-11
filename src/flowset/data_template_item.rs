@@ -3,7 +3,7 @@ use field::{FlowField, TypeLengthField};
 use flowset::{Record, TemplateParser};
 use util::{take_u16, u16_to_bytes};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DataTemplateItem {
     pub template_id: u16,
     pub field_count: u16,
