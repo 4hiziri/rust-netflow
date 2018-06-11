@@ -12,7 +12,7 @@ use self::option_template::*;
 mod data_flow;
 use self::data_flow::*;
 
-mod data_template_item;
+pub mod data_template_item;
 use self::data_template_item::*;
 
 mod option_template_item;
