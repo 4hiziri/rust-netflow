@@ -6,7 +6,7 @@ named!(netflowfield <&[u8], TypeLengthField>,
        dbg!(map!(count!(map!(take!(2), |i| be_u16(i).unwrap().1), 2),
                  |v: Vec<_>| TypeLengthField::new(v[0], v[1]))));
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct TypeLengthField {
     pub type_id: u16,
     pub length: u16,
