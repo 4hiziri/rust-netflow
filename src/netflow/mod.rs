@@ -88,28 +88,6 @@ mod test_netflow {
     use super::test_data;
     use netflow::*;
 
-    // TODO: can use macro?
-    fn is_template(flowset: &FlowSet) -> bool {
-        match flowset {
-            &FlowSet::DataTemplate(_) => true,
-            _ => false,
-        }
-    }
-
-    fn is_option(flowset: &FlowSet) -> bool {
-        match flowset {
-            &FlowSet::OptionTemplate(_) => true,
-            _ => false,
-        }
-    }
-
-    fn is_dataflow(flowset: &FlowSet) -> bool {
-        match flowset {
-            &FlowSet::DataFlow(_) => true,
-            _ => false,
-        }
-    }
-
     // TODO: extract as combination test
     #[test]
     fn test_netflow9() {
@@ -124,13 +102,13 @@ mod test_netflow {
         assert_eq!(netflow.timestamp, 1523936618);
         assert_eq!(netflow.flow_sequence, 883);
         assert_eq!(netflow.flow_sets.len(), 7);
-        assert!(is_template(&netflow.flow_sets[0]));
-        assert!(is_template(&netflow.flow_sets[1]));
-        assert!(is_template(&netflow.flow_sets[2]));
-        assert!(is_template(&netflow.flow_sets[3]));
-        assert!(is_option(&netflow.flow_sets[4]));
-        assert!(is_dataflow(&netflow.flow_sets[5]));
-        assert!(is_dataflow(&netflow.flow_sets[6]));
+        assert!(netflow.flow_sets[0].is_template());
+        assert!(netflow.flow_sets[1].is_template());
+        assert!(netflow.flow_sets[2].is_template());
+        assert!(netflow.flow_sets[3].is_template());
+        assert!(netflow.flow_sets[4].is_option());
+        assert!(netflow.flow_sets[5].is_dataflow());
+        assert!(netflow.flow_sets[6].is_dataflow());
     }
 
     #[test]

@@ -82,6 +82,28 @@ impl FlowSet {
             FlowSet::DataFlow(dataflow) => dataflow.to_bytes(),
         }
     }
+
+    // TODO: can use macro?
+    pub fn is_template(&self) -> bool {
+        match self {
+            &FlowSet::DataTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_option(&self) -> bool {
+        match self {
+            &FlowSet::OptionTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_dataflow(&self) -> bool {
+        match self {
+            &FlowSet::DataFlow(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]
