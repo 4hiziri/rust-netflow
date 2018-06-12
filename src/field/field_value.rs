@@ -16,7 +16,7 @@ use util::{
 // 6. mac address
 // 7. string
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FieldValue {
     NumField(UInt),
     ByteArray(Vec<u8>),
@@ -27,6 +27,7 @@ pub enum FieldValue {
     Unknown(Vec<u8>),
 }
 
+// TODO: use import!
 lazy_static! {
     static ref NUM_ID: HashSet<u16> = {
         let mut set = HashSet::new();
@@ -230,7 +231,7 @@ impl FieldValue {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UInt {
     UInt8(u8),
     UInt16(u16),

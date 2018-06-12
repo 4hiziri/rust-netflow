@@ -1,7 +1,7 @@
 // TODO: from_str and compare(?)
 // TODO: impl converter for Field
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct MacAddr {
     a: u8,
     b: u8,

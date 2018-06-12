@@ -28,7 +28,7 @@ pub use self::type_length_field::*;
 #[cfg(test)]
 mod test_data;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowField {
     type_id: u16,
     length: u16,
