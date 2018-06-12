@@ -2,11 +2,11 @@ use super::{Record, TemplateParser};
 use error::{Error, ParseResult};
 use util::{take_u16, u16_to_bytes};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataFlow {
     pub flowset_id: u16,
     pub length: u16,
-    record_bytes: Vec<u8>,
+    record_bytes: Vec<u8>, // how serialized?
     pub records: Option<Vec<Record>>,
 }
 

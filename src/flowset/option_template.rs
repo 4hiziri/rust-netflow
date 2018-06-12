@@ -5,7 +5,7 @@ use util::{take_u16, u16_to_bytes};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionTemplate {
     pub flowset_id: u16,
     pub length: u16,

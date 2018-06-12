@@ -13,7 +13,7 @@ use util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
 
 // TODO: need mut?
 // TODO: enum NetFlow or abstract with Netflow struct
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetFlow9 {
     pub version: u16,
     pub count: u16,

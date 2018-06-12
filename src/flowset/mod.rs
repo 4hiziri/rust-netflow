@@ -27,7 +27,7 @@ use self::template_parser::*;
 use error::ParseResult;
 use util::take_u16;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FlowSet {
     DataTemplate(DataTemplate),
     OptionTemplate(OptionTemplate),

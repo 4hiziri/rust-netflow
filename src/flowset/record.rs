@@ -1,6 +1,6 @@
 use field::FlowField;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Record {
     Data(DataRecord),
     OptionData(OptionRecord),
@@ -25,7 +25,7 @@ impl Record {
 }
 
 // TODO: accessing method
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataRecord {
     fields: Vec<FlowField>,
 }
@@ -46,7 +46,7 @@ impl DataRecord {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionRecord {
     scope_fields: Vec<FlowField>,
     option_fields: Vec<FlowField>,

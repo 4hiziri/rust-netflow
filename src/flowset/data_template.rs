@@ -4,7 +4,7 @@ use util::{take_u16, u16_to_bytes};
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataTemplate {
     pub flowset_id: u16,
     pub length: u16,
