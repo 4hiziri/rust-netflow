@@ -19,7 +19,7 @@ mod option_template_item;
 pub use self::option_template_item::*;
 
 mod record;
-use self::record::*;
+pub use self::record::*;
 
 mod template_parser;
 use self::template_parser::*;
