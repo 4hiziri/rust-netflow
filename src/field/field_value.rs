@@ -245,6 +245,18 @@ pub enum UInt {
 /// every field can have various bit-length
 /// so, field must be able to accept such config
 impl UInt {
+    fn fit_vec(len: usize, val: u8, bytes: &[u8]) -> Vec<u8> {
+        let mut vec = Vec::from(bytes);
+
+        if bytes.len() < len {
+            for _ in 0..len - bytes.len() {
+                vec.push(val);
+            }
+        }
+
+        vec
+    }
+
     // convert uint from [u8] as BigEndian
     pub fn from_bytes(bytes: &[u8]) -> UInt {
         let len = bytes.len();
@@ -254,13 +266,12 @@ impl UInt {
         } else if len == 2 {
             UInt::UInt16(take_u16(&bytes).unwrap().1)
         } else if len > 2 && len <= 4 {
-            UInt::UInt32(take_u32(&bytes).unwrap().1)
+            UInt::UInt32(take_u32(&UInt::fit_vec(4, 0, bytes)).unwrap().1)
         } else if len > 4 && len <= 8 {
-            UInt::UInt64(take_u64(&bytes).unwrap().1)
+            UInt::UInt64(take_u64(&UInt::fit_vec(8, 0, bytes)).unwrap().1)
         } else if len > 8 && len <= 16 {
-            UInt::UInt128(take_u128(&bytes).unwrap().1)
+            UInt::UInt128(take_u128(&UInt::fit_vec(16, 0, bytes)).unwrap().1)
         } else {
-            // TODO: need error?
             UInt::UIntFlex(bytes.to_vec())
         }
     }
