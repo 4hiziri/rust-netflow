@@ -7,10 +7,10 @@ mod data_template;
 pub use self::data_template::*;
 
 mod option_template;
-use self::option_template::*;
+pub use self::option_template::*;
 
 mod data_flow;
-use self::data_flow::*;
+pub use self::data_flow::*;
 
 mod data_template_item;
 pub use self::data_template_item::*;
