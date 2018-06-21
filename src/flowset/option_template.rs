@@ -80,6 +80,10 @@ impl OptionTemplate {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 #[cfg(test)]
@@ -123,5 +127,14 @@ mod test_option_template {
         let re_bytes = option.to_bytes();
 
         assert_eq!(re_bytes, bytes);
+    }
+
+    #[test]
+    fn test_byte_length() {
+        // TODO: check padding specification
+        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (_rest, option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
+
+        assert_eq!(option.byte_length(), packet_bytes.len());
     }
 }

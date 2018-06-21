@@ -104,6 +104,10 @@ impl FlowSet {
             _ => false,
         }
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 #[cfg(test)]
@@ -172,5 +176,13 @@ mod test_flowset {
         let bytes = set.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &test_data.as_ref());
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let test_data = test_data::FLOWSET_DATA;
+        let (_, set) = FlowSet::from_bytes(&test_data).unwrap();
+
+        assert_eq!(set.byte_length(), test_data.len());
     }
 }

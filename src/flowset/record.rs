@@ -22,6 +22,8 @@ impl Record {
             Record::OptionData(option) => option.to_bytes(),
         }
     }
+
+    // TODO: Need convertor?
 }
 
 // TODO: accessing method
@@ -43,6 +45,10 @@ impl DataRecord {
         }
 
         bytes
+    }
+
+    fn byte_length(&self) -> usize {
+        self.to_bytes().len()
     }
 }
 
@@ -73,4 +79,10 @@ impl OptionRecord {
 
         bytes
     }
+
+    fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
+
+// TODO: add test

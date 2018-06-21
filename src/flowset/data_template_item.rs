@@ -83,6 +83,10 @@ impl DataTemplateItem {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 impl TemplateParser for DataTemplateItem {
@@ -164,5 +168,13 @@ mod data_template_test {
         let bytes = temp.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &data.as_ref());
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let (len, data) = test_data::TEMPLATE_FIELDS;
+        let (_rest, temp) = DataTemplateItem::from_bytes(len, &data).unwrap();
+
+        assert_eq!(temp.byte_length(), data.len());
     }
 }

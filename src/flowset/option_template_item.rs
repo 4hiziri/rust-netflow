@@ -106,6 +106,11 @@ impl OptionTemplateItem {
 
         bytes
     }
+
+    // TODO: extract as trait
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 impl TemplateParser for OptionTemplateItem {
@@ -208,5 +213,13 @@ mod option_template_test {
         let bytes = temp.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &data);
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let (len, data) = test_data::OPTION_TEMPLATE_ITEM;
+        let (_rest, temp) = OptionTemplateItem::from_bytes(len, &data).unwrap();
+
+        assert_eq!(temp.byte_length(), data.len());
     }
 }

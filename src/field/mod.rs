@@ -62,4 +62,10 @@ impl FlowField {
     pub fn to_bytes(&self) -> Vec<u8> {
         self.value.to_bytes(self.length)
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
+
+// TODO: add test

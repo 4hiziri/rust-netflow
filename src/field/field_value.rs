@@ -287,7 +287,6 @@ impl UInt {
             for _ in 0..(length - buf_len) {
                 bytes.push(0); // FIXME: should return error
             }
-
             bytes.append(&mut buf.to_vec());
 
             bytes
@@ -326,3 +325,5 @@ impl UInt {
         }
     }
 }
+
+// TODO: add test

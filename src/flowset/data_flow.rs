@@ -134,6 +134,10 @@ impl DataFlow {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 #[cfg(test)]
@@ -194,5 +198,16 @@ mod test_data_flow {
         let re_bytes = dataflow.to_bytes();
 
         assert_eq!(re_bytes, bytes);
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
+        let template = DataTemplate::from_bytes(&test_template).unwrap().1;
+        let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
+            .unwrap()
+            .1;
+
+        assert_eq!(dataflow.byte_length(), testdata.len());
     }
 }

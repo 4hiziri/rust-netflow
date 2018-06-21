@@ -50,6 +50,10 @@ impl DataTemplate {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 #[cfg(test)]
@@ -102,4 +106,13 @@ mod data_template_test {
         let re_bytes = template.to_bytes();
         assert_eq!(re_bytes, bytes);
     }
+
+    #[test]
+    fn test_byte_length() {
+        let test_data = &test_data::TEMPLATE_DATA[..];
+        let (_, template) = DataTemplate::from_bytes(&test_data).unwrap();
+
+        assert_eq!(template.byte_length(), test_data.len());
+    }
+
 }

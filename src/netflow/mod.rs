@@ -81,6 +81,10 @@ impl NetFlow9 {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 #[cfg(test)]
@@ -118,5 +122,14 @@ mod test_netflow {
 
         let bytes = res.to_bytes();
         assert_eq!(&bytes.as_slice(), &packet_bytes.as_ref());
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let packet_bytes = &test_data::NETFLOWV9_DATA[..];
+        let netflow = NetFlow9::from_bytes(&packet_bytes).unwrap();
+
+        // TODO: need check how handle padding
+        assert_eq!(netflow.byte_length(), packet_bytes.len()); // Padding problem!
     }
 }
