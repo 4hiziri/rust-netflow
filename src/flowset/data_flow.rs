@@ -13,6 +13,7 @@ pub struct DataFlow {
 // TODO: impl search or map like access API
 
 impl DataFlow {
+    // TODO: complete length by Record data?
     // TODO: this can make invalid records and record_bytes, I should make another interface?
     pub fn new(flowset_id: u16, length: u16, records: Vec<Record>) -> DataFlow {
         let mut bytes = Vec::new();

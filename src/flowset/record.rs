@@ -24,6 +24,10 @@ impl Record {
     }
 
     // TODO: Need convertor?
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 // TODO: accessing method
