@@ -12,9 +12,14 @@ pub struct DataTemplate {
 }
 
 impl DataTemplate {
-    pub fn new(length: u16, templates: Vec<DataTemplateItem>) -> DataTemplate {
+    pub fn new(templates: Vec<DataTemplateItem>) -> DataTemplate {
+        let length: u16 = templates
+            .as_slice()
+            .into_iter()
+            .fold(0, |sum, temp| sum + temp.byte_length()) as u16;
+
         DataTemplate {
-            flowset_id: 0, // DataTemplate's flowset_id is 0
+            flowset_id: TEMPLATE_FLOWSET_ID,
             length: length,
             templates: templates,
         }
@@ -24,9 +29,15 @@ impl DataTemplate {
         let (rest, flowset_id) = take_u16(&data).unwrap();
         let (rest, flowset_length) = take_u16(&rest).unwrap();
         let (rest, templates) = DataTemplateItem::to_vec(flowset_length - 4, &rest).unwrap();
-
         if flowset_id == TEMPLATE_FLOWSET_ID {
-            Ok((rest, DataTemplate::new(flowset_length, templates)))
+            Ok((
+                rest,
+                DataTemplate {
+                    flowset_id: 0,
+                    length: flowset_length,
+                    templates: templates,
+                },
+            ))
         } else {
             Err(Error::InvalidLength)
         }

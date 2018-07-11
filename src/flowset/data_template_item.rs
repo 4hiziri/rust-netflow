@@ -13,23 +13,20 @@ pub struct DataTemplateItem {
 impl DataTemplateItem {
     const HEADER_LEN: u16 = 4; // len(id + length) = 4
 
-    pub fn new(
-        template_id: u16,
-        field_count: u16,
-        fields: Vec<TypeLengthField>,
-    ) -> DataTemplateItem {
+    pub fn new(template_id: u16, fields: Vec<TypeLengthField>) -> DataTemplateItem {
         DataTemplateItem {
             template_id: template_id,
-            field_count: field_count,
+            field_count: fields.len() as u16,
             fields: fields,
         }
     }
 
+    /// Return DataTemplateItem from data
+    /// length is DataTemplateItem's length, not DataTemplate's
+    /// validate with length, need this?
     pub fn from_bytes(length: u16, data: &[u8]) -> ParseResult<DataTemplateItem> {
         let (rest, template_id) = take_u16(&data).unwrap();
         let (rest, field_count) = take_u16(&rest).unwrap();
-
-        debug!("field_count is {}", field_count);
 
         if length - DataTemplateItem::HEADER_LEN >= field_count * 4 {
             let (rest, fields): (&[u8], Vec<TypeLengthField>) =
@@ -37,7 +34,11 @@ impl DataTemplateItem {
 
             Ok((
                 rest,
-                DataTemplateItem::new(template_id, field_count, fields),
+                DataTemplateItem {
+                    template_id: template_id,
+                    field_count: field_count,
+                    fields: fields,
+                },
             ))
         } else {
             Err(Error::InvalidLength)
