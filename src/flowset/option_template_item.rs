@@ -29,6 +29,9 @@ impl OptionTemplateItem {
         }
     }
 
+    /// Return OptionTemplateItem from data
+    /// length is OptionTemplateItem's length, not OptionTemplate's
+    /// validate with length, need this?
     pub fn from_bytes(length: u16, data: &[u8]) -> ParseResult<OptionTemplateItem> {
         let (rest, template_id) = take_u16(&data).unwrap();
         let (rest, scope_length) = take_u16(&rest).unwrap();
