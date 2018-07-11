@@ -13,18 +13,18 @@ pub struct DataFlow {
 // TODO: impl search or map like access API
 
 impl DataFlow {
-    // TODO: complete length by Record data?
-    // TODO: this can make invalid records and record_bytes, I should make another interface?
-    pub fn new(flowset_id: u16, length: u16, records: Vec<Record>) -> DataFlow {
+    pub fn new(flowset_id: u16, records: Vec<Record>) -> DataFlow {
         let mut bytes = Vec::new();
+        let header_len = 4; // len(id + length) = 4
 
         for record in &records {
             bytes.append(&mut record.to_bytes());
         }
 
+        // TODO: check padding
         DataFlow {
             flowset_id: flowset_id,
-            length: length,
+            length: header_len + bytes.len() as u16,
             record_bytes: bytes,
             records: Some(records),
         }
