@@ -1,6 +1,5 @@
 use super::OptionTemplateItem;
 use error::{Error, ParseResult};
-use field::TypeLengthField;
 use util::{take_u16, u16_to_bytes};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
@@ -14,12 +13,7 @@ pub struct OptionTemplate {
 
 // TODO: add field that represent padding
 impl OptionTemplate {
-    pub fn new(
-        template_id: u16,
-        scopes: Vec<TypeLengthField>,
-        options: Vec<TypeLengthField>,
-    ) -> OptionTemplate {
-        let template = OptionTemplateItem::new(template_id, scopes, options);
+    pub fn new(template: OptionTemplateItem) -> OptionTemplate {
         let length = 10 + template.option_count * 4 + template.scope_count * 4;
 
         // TODO: add padding
