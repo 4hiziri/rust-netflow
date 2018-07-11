@@ -24,7 +24,7 @@ impl OptionTemplate {
 
         // TODO: add padding
         OptionTemplate {
-            flowset_id: 1,
+            flowset_id: OPTION_FLOWSET_ID,
             length: length,
             templates: template,
         }
