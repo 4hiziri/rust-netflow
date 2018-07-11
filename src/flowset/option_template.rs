@@ -12,21 +12,19 @@ pub struct OptionTemplate {
     pub templates: OptionTemplateItem,
 }
 
+// TODO: add field that represent padding
 impl OptionTemplate {
     pub fn new(
-        flowset_id: u16,
-        length: u16,
         template_id: u16,
-        scope_len: u16,
-        opt_len: u16,
         scopes: Vec<TypeLengthField>,
         options: Vec<TypeLengthField>,
     ) -> OptionTemplate {
-        let template =
-            OptionTemplateItem::new(template_id, scope_len / 4, opt_len / 4, scopes, options);
+        let template = OptionTemplateItem::new(template_id, scopes, options);
+        let length = 10 + template.option_count * 4 + template.scope_count * 4;
 
+        // TODO: add padding
         OptionTemplate {
-            flowset_id: flowset_id,
+            flowset_id: 1,
             length: length,
             templates: template,
         }
@@ -37,23 +35,16 @@ impl OptionTemplate {
 
         if flowset_id == OPTION_FLOWSET_ID {
             let (rest, length) = take_u16(&rest).unwrap();
-            let (rest, template_id) = take_u16(&rest).unwrap();
-            let (rest, scope_len) = take_u16(&rest).unwrap();
-            let (rest, option_len) = take_u16(&rest).unwrap();
-            let (rest, scopes) = TypeLengthField::to_vec((scope_len / 4) as usize, rest).unwrap();
-            let (rest, options) = TypeLengthField::to_vec((option_len / 4) as usize, rest).unwrap();
+            let (rest, option_item) = OptionTemplateItem::from_bytes(length - 4, rest).unwrap();
+            // TODO: error handling
 
             Ok((
                 rest,
-                OptionTemplate::new(
-                    flowset_id,
-                    length,
-                    template_id,
-                    scope_len,
-                    option_len,
-                    scopes,
-                    options,
-                ),
+                OptionTemplate {
+                    flowset_id: flowset_id,
+                    length: length,
+                    templates: option_item,
+                },
             ))
         } else {
             Err(Error::InvalidLength)

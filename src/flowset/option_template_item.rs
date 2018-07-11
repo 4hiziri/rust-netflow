@@ -17,15 +17,13 @@ impl OptionTemplateItem {
 
     pub fn new(
         template_id: u16,
-        scope_count: u16,
-        option_count: u16,
         scopes: Vec<TypeLengthField>,
         options: Vec<TypeLengthField>,
     ) -> Self {
         OptionTemplateItem {
             template_id: template_id,
-            scope_count: scope_count,
-            option_count: option_count,
+            scope_count: scopes.len() as u16,
+            option_count: options.len() as u16,
             scopes: scopes,
             options: options,
         }
@@ -36,6 +34,7 @@ impl OptionTemplateItem {
         let (rest, scope_length) = take_u16(&rest).unwrap();
         let (rest, option_length) = take_u16(&rest).unwrap();
 
+        // TODO: need this check?
         if (length - OptionTemplateItem::HEADER_LEN) >= (scope_length + option_length) {
             let scope_count = scope_length / 4; // TODO: remove mgk num
             let (rest, scopes): (&[u8], Vec<TypeLengthField>) =
@@ -47,6 +46,7 @@ impl OptionTemplateItem {
 
             // remove padding
             Ok((
+                // TODO: extract as function
                 if length - OptionTemplateItem::HEADER_LEN - scope_length - option_length != 0 {
                     let pad_len: usize =
                         (length - OptionTemplateItem::HEADER_LEN - scope_length - option_length)
@@ -55,7 +55,13 @@ impl OptionTemplateItem {
                 } else {
                     rest
                 },
-                OptionTemplateItem::new(template_id, scope_count, option_count, scopes, options),
+                OptionTemplateItem {
+                    template_id: template_id,
+                    scope_count: scope_count,
+                    option_count: option_count,
+                    scopes: scopes,
+                    options: options,
+                },
             ))
         } else {
             Err(Error::InvalidLength)
