@@ -1,5 +1,7 @@
 use field::FlowField;
 
+// TODO: need test
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Record {
     Data(DataRecord),
@@ -15,7 +17,6 @@ impl Record {
         Record::OptionData(OptionRecord::new(scopes, options))
     }
 
-    // TODO: need test
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             Record::Data(data) => data.to_bytes(),
