@@ -110,6 +110,24 @@ impl FlowSet {
     }
 }
 
+impl From<DataFlow> for FlowSet {
+    fn from(data: DataFlow) -> Self {
+        FlowSet::DataFlow(data)
+    }
+}
+
+impl From<OptionTemplate> for FlowSet {
+    fn from(option: OptionTemplate) -> Self {
+        FlowSet::OptionTemplate(option)
+    }
+}
+
+impl From<DataTemplate> for FlowSet {
+    fn from(template: DataTemplate) -> Self {
+        FlowSet::DataTemplate(template)
+    }
+}
+
 #[cfg(test)]
 mod test_flowset {
     use super::FlowSet;
