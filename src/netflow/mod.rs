@@ -25,6 +25,24 @@ pub struct NetFlow9 {
 }
 
 impl NetFlow9 {
+    pub fn new(
+        sys_uptime: u32,
+        timestamp: u32,
+        flow_sequence: u32,
+        source_id: u32,
+        flowsets: Vec<FlowSet>,
+    ) -> Self {
+        NetFlow9 {
+            version: 9,
+            count: flowsets.len() as u16,
+            sys_uptime: sys_uptime,
+            timestamp: timestamp,
+            flow_sequence: flow_sequence,
+            source_id: source_id,
+            flow_sets: flowsets,
+        }
+    }
+
     pub fn from_bytes(payload: &[u8]) -> Result<Self, Error> {
         let (rest, version) = take_u16(payload).unwrap();
 
