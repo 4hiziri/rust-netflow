@@ -116,7 +116,7 @@ impl DataFlow {
             Some(records) => {
                 for record in records {
                     let mut buf = record.to_bytes();
-                    println!("to: {:?}", buf);
+                    debug!("to: {:?}", buf);
                     bytes.append(&mut buf);
                 }
             }
