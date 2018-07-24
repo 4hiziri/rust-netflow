@@ -8,6 +8,7 @@ pub struct DataFlow {
     pub length: u16,
     record_bytes: Vec<u8>, // how serialized?
     pub records: Option<Vec<Record>>,
+    is_padding: bool, // in default, padding SHOULD be enabled.
 }
 
 // TODO: impl search or map like access API
@@ -21,16 +22,15 @@ impl DataFlow {
             bytes.append(&mut record.to_bytes());
         }
 
-        // TODO: check padding
         DataFlow {
             flowset_id: flowset_id,
             length: header_len + bytes.len() as u16,
             record_bytes: bytes,
             records: Some(records),
+            is_padding: true,
         }
     }
 
-    // Some implementation seems not to append padding
     pub fn from_bytes_notemplate(data: &[u8]) -> ParseResult<DataFlow> {
         debug!("Length of parsing data: {}", data.len());
 
@@ -46,12 +46,14 @@ impl DataFlow {
                 length: length,
                 record_bytes: record_bytes.to_vec(),
                 records: None,
+                is_padding: length % 4 == 0,
+                // if length is 4*n, padding exists or dataflow is aligned already.
             },
         ))
     }
 
     fn remove_padding(length: u16, template_len: u16, payload: &[u8]) -> &[u8] {
-        let padding = DataFlow::get_padding(length, template_len);
+        let padding = Self::get_padding_size(length, template_len);
         let mut rest = payload;
 
         if padding > 0 {
@@ -69,24 +71,30 @@ impl DataFlow {
         let (rest, flowset_id) = take_u16(&data).unwrap();
         let (rest, length) = take_u16(&rest).unwrap();
 
-        let hit_temp: Vec<&T> = templates
+        let match_template: Vec<&T> = templates
             .iter()
             .filter(|template| template.get_id() == flowset_id)
             .collect();
 
-        if hit_temp.len() >= 1 {
-            let template = hit_temp[0];
+        // can use pattern-matching? research list match
+        if match_template.len() >= 1 {
+            let template = match_template[0];
             let bytes = rest;
+            // - 4 is length of id filed and length field
             let (rest, records) = template.parse_dataflows(length - 4, rest).unwrap();
-            let rest = DataFlow::remove_padding(length, template.get_template_len(), rest);
+            let rest_not_padding =
+                DataFlow::remove_padding(length, template.get_template_len(), rest);
+            // if padding was removed or dataflow len is aligned by 4, padding exists.
+            let is_padding = rest_not_padding.len() != rest.len() || length % 4 == 0;
 
             Ok((
-                rest,
+                rest_not_padding,
                 DataFlow {
                     flowset_id: flowset_id,
                     length: length,
-                    record_bytes: bytes[..(length as usize - 4)].to_vec(), // TODO: need?
+                    record_bytes: bytes[..(length as usize - 4)].to_vec(),
                     records: Some(records),
+                    is_padding: is_padding,
                 },
             ))
         } else {
@@ -94,12 +102,16 @@ impl DataFlow {
         }
     }
 
-    fn get_record_num(payload_len: u16, template_len: u16) -> usize {
-        ((payload_len - 4) / template_len) as usize
+    fn get_padding_size(payload_len: u16, template_len: u16) -> u16 {
+        (payload_len - 4) % template_len
     }
 
-    fn get_padding(payload_len: u16, template_len: u16) -> u16 {
-        payload_len - template_len * DataFlow::get_record_num(payload_len, template_len) as u16 - 4
+    pub fn is_padding(&self) -> bool {
+        self.is_padding
+    }
+
+    pub fn set_padding(&mut self, is_padding: bool) {
+        self.is_padding = is_padding;
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -125,11 +137,9 @@ impl DataFlow {
 
         debug!("Bytes length before padding: {:?}", bytes.len());
 
-        // padding
-        if bytes.len() % 4 != 0 {
-            let padding = 4 - bytes.len() % 4;
-            for _ in 0..padding {
-                bytes.push(0);
+        if self.is_padding() {
+            for _ in 0..(4 - bytes.len() % 4) % 4 {
+                bytes.push(0); // padding SHOULD be 0
             }
         }
 
