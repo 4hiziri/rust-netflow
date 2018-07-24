@@ -52,15 +52,11 @@ impl DataFlow {
         ))
     }
 
+    /// length is dataflow length, not record-payload's length
     fn remove_padding(length: u16, template_len: u16, payload: &[u8]) -> &[u8] {
         let padding = Self::get_padding_size(length, template_len);
-        let mut rest = payload;
 
-        if padding > 0 {
-            rest = &rest[(padding as usize)..]
-        }
-
-        rest
+        &payload[(padding as usize)..]
     }
 
     pub fn from_bytes<'a, T>(data: &'a [u8], templates: &'a [T]) -> ParseResult<'a, DataFlow>
@@ -82,8 +78,7 @@ impl DataFlow {
             let bytes = rest;
             // - 4 is length of id filed and length field
             let (rest, records) = template.parse_dataflows(length - 4, rest).unwrap();
-            let rest_not_padding =
-                DataFlow::remove_padding(length, template.get_template_len(), rest);
+            let rest_not_padding = Self::remove_padding(length, template.get_template_len(), rest);
             // if padding was removed or dataflow len is aligned by 4, padding exists.
             let is_padding = rest_not_padding.len() != rest.len() || length % 4 == 0;
 
@@ -102,6 +97,7 @@ impl DataFlow {
         }
     }
 
+    ///
     fn get_padding_size(payload_len: u16, template_len: u16) -> u16 {
         (payload_len - 4) % template_len
     }
@@ -157,15 +153,16 @@ mod test_data_flow {
     use flowset::{test_data, DataTemplate};
 
     #[test]
-    fn test_dataflow_no_template() {
+    fn from_bytes_notemplate() {
         let packet_bytes = test_data::DATAFLOW_DATA;
         let res = DataFlow::from_bytes_notemplate(&packet_bytes);
 
         assert!(res.is_ok());
+        // TODO: add field value test
     }
 
     #[test]
-    fn test_dataflow_with_template() {
+    fn from_bytes() {
         let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
         let template = DataTemplate::from_bytes(&test_template);
         assert!(template.is_ok());
@@ -183,21 +180,81 @@ mod test_data_flow {
         assert_eq!(records.len(), 8);
     }
 
+    // TODO: think more suitable test name
     #[test]
-    fn test_to_bytes() {
+    fn to_bytes() {
         let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
         let template = DataTemplate::from_bytes(&test_template).unwrap().1;
-        let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
+        let mut dataflow = DataFlow::from_bytes(&testdata, &template.templates)
             .unwrap()
             .1;
-        let bytes = dataflow.to_bytes();
 
+        let bytes = dataflow.to_bytes();
         assert_eq!(bytes.len() % 4, 0);
+        assert_eq!(&bytes.as_slice(), &testdata.as_ref());
+
+        dataflow.set_padding(false);
+        let bytes = dataflow.to_bytes();
         assert_eq!(&bytes.as_slice(), &testdata.as_ref());
     }
 
     #[test]
-    fn test_convert() {
+    fn to_bytes_no_padding() {
+        let (test_template, (data, _padding_data)) = test_data::TEMPLATE_AND_DATA_WITH_PADDING;
+        let template = DataTemplate::from_bytes(&test_template).unwrap().1;
+
+        // no padding
+
+        let mut dataflow = DataFlow::from_bytes(&data, &template.templates).unwrap().1;
+
+        // if padding doesn't exist, is_padding is false
+        assert!(!dataflow.is_padding(), "is_padding is true");
+        let bytes = dataflow.to_bytes();
+        assert_eq!(&bytes.as_slice(), &data.as_ref(), "Wrong when no padding");
+
+        // set padding flag
+        dataflow.set_padding(true);
+
+        let bytes = dataflow.to_bytes();
+        let mut padding = Vec::new();
+        padding.extend_from_slice(&data[..]);
+        padding.push(0);
+
+        assert_eq!(bytes.len() % 4, 0, "Not aligned");
+        assert_eq!(&bytes, &padding, "Wrong when padding, is_padding true");
+    }
+
+    #[test]
+    fn to_bytes_padding() {
+        let (test_template, (_data, padding_data)) = test_data::TEMPLATE_AND_DATA_WITH_PADDING;
+        let template = DataTemplate::from_bytes(&test_template).unwrap().1;
+
+        let mut dataflow = DataFlow::from_bytes(&padding_data, &template.templates)
+            .unwrap()
+            .1;
+        // if padding doesn't exist, is_padding is false
+        assert!(dataflow.is_padding(), "is_padding is false");
+
+        let bytes = dataflow.to_bytes();
+        assert_eq!(bytes.len() % 4, 0, "Not aligned");
+        assert_eq!(
+            &bytes.as_slice(),
+            &padding_data.as_ref(),
+            "Wrong when padding, is_padding true"
+        );
+
+        // set padding flag, but already aligned
+        dataflow.set_padding(false);
+
+        let bytes = dataflow.to_bytes();
+        let mut no_padding: Vec<u8> = Vec::new();
+        no_padding.extend(&padding_data[..]);
+        no_padding.pop();
+        assert_eq!(&bytes, &no_padding, "Wrong when padding, is_padding false");
+    }
+
+    #[test]
+    fn convert_from_to() {
         let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
         let template = DataTemplate::from_bytes(&test_template).unwrap().1;
         let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
@@ -212,13 +269,37 @@ mod test_data_flow {
     }
 
     #[test]
-    fn test_byte_length() {
+    fn byte_length() {
         let (test_template, testdata) = test_data::TEMPLATE_AND_DATA;
+        // Test data's length is aligned by 4, this isn't suitable for test.
         let template = DataTemplate::from_bytes(&test_template).unwrap().1;
-        let dataflow = DataFlow::from_bytes(&testdata, &template.templates)
+        let mut dataflow = DataFlow::from_bytes(&testdata, &template.templates)
             .unwrap()
             .1;
 
         assert_eq!(dataflow.byte_length(), testdata.len());
+
+        dataflow.set_padding(false);
+        assert_eq!(dataflow.byte_length(), testdata.len());
+    }
+
+    #[test]
+    fn get_padding_size() {
+        let template_len = 12;
+        let length = 39 + 4;
+        let pad_len = DataFlow::get_padding_size(length, template_len);
+
+        assert_eq!(pad_len, 3);
+    }
+
+    #[test]
+    fn test_remove_padding() {
+        let payload = [0; 39];
+        let template_len = 12;
+        let length = 39 + 4;
+
+        let payload = DataFlow::remove_padding(length, template_len, &payload);
+
+        assert_eq!(payload.len(), 36);
     }
 }
