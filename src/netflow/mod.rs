@@ -1,13 +1,9 @@
 #[cfg(test)]
 mod test_data;
-#[cfg(test)]
-mod tests;
 
 use error::Error;
 use flowset::FlowSet;
 use util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
-
-// TODO: impl method struct into bytes
 
 // Netflow V9 -> Header + (Template* Option* Data*)
 
@@ -95,13 +91,33 @@ impl NetFlow9 {
             bytes.append(&mut flowset.to_bytes());
         }
 
-        // TODO: padding
-
         bytes
     }
 
     pub fn byte_length(&self) -> usize {
         self.to_bytes().len()
+    }
+
+    pub fn is_padding(&self) -> bool {
+        self.flow_sets
+            .as_slice()
+            .into_iter()
+            .map(|flowset| match flowset {
+                FlowSet::DataFlow(dataflow) => dataflow.is_padding(),
+                FlowSet::OptionTemplate(option) => option.is_padding(),
+                _ => true,
+            })
+            .fold(true, |acc, flag| acc && flag)
+    }
+
+    pub fn set_padding(&mut self, is_padding: bool) {
+        for mut flowset in &mut self.flow_sets {
+            match flowset {
+                FlowSet::DataFlow(dataflow) => dataflow.set_padding(is_padding),
+                FlowSet::OptionTemplate(option) => option.set_padding(is_padding),
+                _ => (),
+            }
+        }
     }
 }
 
@@ -110,7 +126,6 @@ mod test_netflow {
     use super::test_data;
     use netflow::*;
 
-    // TODO: extract as combination test
     #[test]
     fn test_netflow9() {
         let packet_bytes = &test_data::NETFLOWV9_DATA[..];
@@ -138,16 +153,24 @@ mod test_netflow {
         let packet_bytes = &test_data::NETFLOWV9_DATA[..];
         let res = NetFlow9::from_bytes(&packet_bytes).unwrap();
 
-        let bytes = res.to_bytes();
-        assert_eq!(&bytes.as_slice(), &packet_bytes.as_ref());
+        let bytes: Vec<u8> = res.to_bytes();
+        assert_eq!(&bytes, &packet_bytes);
     }
 
     #[test]
     fn test_byte_length() {
         let packet_bytes = &test_data::NETFLOWV9_DATA[..];
-        let netflow = NetFlow9::from_bytes(&packet_bytes).unwrap();
+        let mut netflow: NetFlow9 = NetFlow9::from_bytes(&packet_bytes).unwrap();
+
+        for mut flowset in &mut netflow.flow_sets {
+            match flowset {
+                FlowSet::OptionTemplate(ref mut opt) => opt.set_padding(false),
+                _ => (),
+            }
+        }
 
         // TODO: need check how handle padding
-        assert_eq!(netflow.byte_length(), packet_bytes.len()); // Padding problem!
+        let netflow_len = netflow.byte_length();
+        assert_eq!(netflow_len, packet_bytes.len());
     }
 }
