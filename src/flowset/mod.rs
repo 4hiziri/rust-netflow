@@ -1,25 +1,14 @@
 #[cfg(test)]
-mod flowset_tests;
-#[cfg(test)]
 mod test_data;
 
-mod data_template;
-pub use self::data_template::*;
+mod template;
+pub use self::template::*;
 
-mod option_template;
-pub use self::option_template::*;
+mod option;
+pub use self::option::*;
 
-mod data_flow;
-pub use self::data_flow::*;
-
-mod data_template_item;
-pub use self::data_template_item::*;
-
-mod option_template_item;
-pub use self::option_template_item::*;
-
-mod record;
-pub use self::record::*;
+mod data;
+pub use self::data::*;
 
 mod template_parser;
 use self::template_parser::*;
