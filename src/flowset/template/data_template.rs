@@ -12,6 +12,8 @@ pub struct DataTemplate {
 }
 
 impl DataTemplate {
+    const HEADER_LEN: u16 = 4;
+
     pub fn new(templates: Vec<DataTemplateItem>) -> DataTemplate {
         let length: u16 = templates
             .as_slice()
@@ -28,7 +30,7 @@ impl DataTemplate {
     pub fn from_bytes(data: &[u8]) -> ParseResult<DataTemplate> {
         let (rest, flowset_id) = take_u16(&data)?;
         let (rest, flowset_length) = take_u16(&rest)?;
-        let (rest, templates) = DataTemplateItem::to_vec(flowset_length - 4, &rest)?;
+        let (rest, templates) = DataTemplateItem::to_vec(flowset_length - Self::HEADER_LEN, &rest)?;
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((
@@ -51,14 +53,17 @@ impl DataTemplate {
         u16_to_bytes(self.flowset_id, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
 
-        u16_to_bytes(self.length, &mut u16_buf);
-        bytes.append(&mut u16_buf.to_vec());
-
+        let mut template_bytes = Vec::new();
         for template in &self.templates {
-            bytes.append(&mut template.to_bytes());
+            template_bytes.append(&mut template.to_bytes());
         }
 
-        debug!("Bytes length: {:?}", bytes.len());
+        let length = template_bytes.len() as u16 + Self::HEADER_LEN;
+
+        u16_to_bytes(length, &mut u16_buf);
+        bytes.append(&mut u16_buf.to_vec());
+
+        bytes.append(&mut template_bytes);
 
         bytes
     }
