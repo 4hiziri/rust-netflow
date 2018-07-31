@@ -1,6 +1,7 @@
 // TODO: Define here Error
 
 use nom;
+use nom::IResult;
 use std::convert::From;
 use std::error;
 use std::fmt;
@@ -12,6 +13,7 @@ pub enum Error {
     InvalidLength,
     InvalidFieldValue, // TODO: contain wrong field name and val
     TemplateNotFound,
+    UnexpectedIncomplete,
 }
 
 impl error::Error for Error {
@@ -21,6 +23,7 @@ impl error::Error for Error {
             Error::InvalidLength => "Payload length is invalid",
             Error::InvalidFieldValue => "Field value is invalid",
             Error::TemplateNotFound => "Template is not found",
+            Error::UnexpectedIncomplete => "Unexpected nom::IResult::Incomplete returned",
         }
     }
 }
@@ -32,6 +35,9 @@ impl Display for Error {
             Error::InvalidLength => write!(f, "Payload length is invalid"),
             Error::InvalidFieldValue => write!(f, "Field value is invalid"),
             Error::TemplateNotFound => write!(f, "Template is not found"),
+            Error::UnexpectedIncomplete => {
+                write!(f, "Unexpected nom::IResult::Incomplete returned")
+            }
         }
     }
 }
@@ -43,3 +49,12 @@ impl From<nom::Err> for Error {
 }
 
 pub type ParseResult<'a, T> = Result<(&'a [u8], T), Error>;
+
+// TODO: make new type
+pub fn to_result<T>(res: IResult<&[u8], T>) -> Result<(&[u8], T), Error> {
+    match res {
+        IResult::Done(i, o) => Ok((i, o)),
+        IResult::Incomplete(_) => Err(Error::UnexpectedIncomplete),
+        IResult::Error(e) => Err(Error::ParseError(e)),
+    }
+}

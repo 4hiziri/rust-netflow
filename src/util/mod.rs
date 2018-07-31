@@ -1,14 +1,24 @@
 use byteorder::{BigEndian, ByteOrder};
+use error;
 use nom::{be_u16, be_u32, be_u64};
 
-// TODO: check nom::IResult
-named!(pub take_u16 <&[u8], u16>, map!(take!(2), |i| be_u16(i).unwrap().1));
-named!(pub take_u32 <&[u8], u32>, map!(take!(4), |i| be_u32(i).unwrap().1));
-named!(pub take_u64 <&[u8], u64>, map!(take!(8), |i| be_u64(i).unwrap().1));
+named!(inner_take_u16 <&[u8], u16>, map!(take!(2), |i| be_u16(i).unwrap().1));
+named!(inner_take_u32 <&[u8], u32>, map!(take!(4), |i| be_u32(i).unwrap().1));
+named!(inner_take_u64 <&[u8], u64>, map!(take!(8), |i| be_u64(i).unwrap().1));
 
-pub fn take_u128(i: &[u8]) -> Result<(&[u8], u128), ()> {
+pub fn take_u16(i: &[u8]) -> error::ParseResult<u16> {
+    error::to_result(inner_take_u16(i))
+}
+pub fn take_u32(i: &[u8]) -> error::ParseResult<u32> {
+    error::to_result(inner_take_u32(i))
+}
+pub fn take_u64(i: &[u8]) -> error::ParseResult<u64> {
+    error::to_result(inner_take_u64(i))
+}
+
+pub fn take_u128(i: &[u8]) -> error::ParseResult<u128> {
     if i.len() < 16 {
-        Err(())
+        Err(error::Error::InvalidLength)
     } else {
         let res = ((i[0] as u128) << 120)
             + ((i[1] as u128) << 112)
