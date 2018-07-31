@@ -25,10 +25,10 @@ impl OptionTemplate {
     }
 
     pub fn from_bytes(data: &[u8]) -> ParseResult<Self> {
-        let (rest, flowset_id) = take_u16(&data).unwrap();
+        let (rest, flowset_id) = take_u16(&data)?;
 
         if flowset_id == OPTION_FLOWSET_ID {
-            let (rest, length) = take_u16(&rest).unwrap();
+            let (rest, length) = take_u16(&rest)?;
             let (rest, option_item) = OptionTemplateItem::from_bytes(length - 4, rest)?;
             // if payload length is not multiple of 4 and length is multiple of 4, padding exists
             let is_padding =

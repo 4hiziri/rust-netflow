@@ -59,6 +59,7 @@ impl FieldValue {
         BITS_ID.contains(&type_id)
     }
 
+    // TODO: add error handling
     pub fn new(type_id: u16, value: &[u8]) -> FieldValue {
         if FieldValue::is_num_field(type_id) {
             FieldValue::NumField(UInt::from_bytes(value))
@@ -121,6 +122,7 @@ impl UInt {
         vec
     }
 
+    // TODO: error handling
     // convert uint from [u8] as BigEndian
     pub fn from_bytes(bytes: &[u8]) -> UInt {
         let len = bytes.len();

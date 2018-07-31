@@ -28,6 +28,8 @@ pub use self::type_length_field::*;
 #[cfg(test)]
 mod test_data;
 
+use error::{Error, ParseResult};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowField {
     type_id: u16,
@@ -44,7 +46,7 @@ impl FlowField {
         }
     }
 
-    pub fn from_bytes(type_id: u16, length: u16, bytes: &[u8]) -> Result<(&[u8], FlowField), ()> {
+    pub fn from_bytes(type_id: u16, length: u16, bytes: &[u8]) -> ParseResult<FlowField> {
         if (length as usize) <= bytes.len() {
             Ok((
                 &bytes[(length as usize)..],
@@ -55,7 +57,7 @@ impl FlowField {
                 ),
             ))
         } else {
-            Err(())
+            Err(Error::InvalidLength)
         }
     }
 

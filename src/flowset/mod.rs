@@ -26,23 +26,23 @@ pub enum FlowSet {
 impl FlowSet {
     // TODO: parse with template
     pub fn from_bytes(data: &[u8]) -> ParseResult<FlowSet> {
-        let (_, id) = take_u16(&data).unwrap(); // num::IResult
+        let (_, id) = take_u16(&data)?;
 
         info!("parsed flowset id: {:?}", id);
 
         match id {
             TEMPLATE_FLOWSET_ID => {
-                let (next, template) = DataTemplate::from_bytes(&data).unwrap(); // Err
+                let (next, template) = DataTemplate::from_bytes(&data)?;
                 debug!("parsed DataTemplate: {:?}", template);
                 Ok((next, FlowSet::DataTemplate(template)))
             }
             OPTION_FLOWSET_ID => {
-                let (next, option) = OptionTemplate::from_bytes(&data).unwrap();
+                let (next, option) = OptionTemplate::from_bytes(&data)?;
                 debug!("parsed OptionTemplate: {:?}", option);
                 Ok((next, FlowSet::OptionTemplate(option)))
             }
             _ => {
-                let (next, flow) = DataFlow::from_bytes_notemplate(&data).unwrap();
+                let (next, flow) = DataFlow::from_bytes_notemplate(&data)?;
                 debug!("parsed DataFlow: {:?}", flow);
                 Ok((next, FlowSet::DataFlow(flow)))
             }
@@ -54,7 +54,7 @@ impl FlowSet {
         let mut sets: Vec<FlowSet> = Vec::new();
 
         while rest.len() > 0 {
-            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap();
+            let (next, flowset) = FlowSet::from_bytes(&rest)?;
             sets.push(flowset);
             rest = next;
         }

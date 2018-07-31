@@ -35,8 +35,8 @@ impl DataFlow {
     pub fn from_bytes_notemplate(data: &[u8]) -> ParseResult<DataFlow> {
         debug!("Length of parsing data: {}", data.len());
 
-        let (rest, flowset_id) = take_u16(&data).unwrap();
-        let (rest, length) = take_u16(&rest).unwrap();
+        let (rest, flowset_id) = take_u16(&data)?;
+        let (rest, length) = take_u16(&rest)?;
         let record_bytes = &rest[..(length as usize - 4)];
         let rest = &rest[(length as usize - 4)..];
 
@@ -65,8 +65,8 @@ impl DataFlow {
         T: TemplateParser,
     {
         debug!("Length of parsing data: {}", data.len());
-        let (rest, flowset_id) = take_u16(&data).unwrap();
-        let (rest, length) = take_u16(&rest).unwrap();
+        let (rest, flowset_id) = take_u16(&data)?;
+        let (rest, length) = take_u16(&rest)?;
 
         let match_template: Vec<&T> = templates
             .iter()
@@ -78,7 +78,7 @@ impl DataFlow {
             let template = match_template[0];
             let bytes = rest;
             // - 4 is length of id filed and length field
-            let (rest, records) = template.parse_dataflows(length - 4, rest).unwrap();
+            let (rest, records) = template.parse_dataflows(length - 4, rest)?;
             let rest_not_padding = Self::remove_padding(length, template.get_template_len(), rest);
             // if padding was removed or dataflow len is aligned by 4, padding exists.
             let is_padding = rest_not_padding.len() != rest.len() || length % 4 == 0;

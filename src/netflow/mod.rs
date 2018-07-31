@@ -40,15 +40,15 @@ impl NetFlow9 {
     }
 
     pub fn from_bytes(payload: &[u8]) -> Result<Self, Error> {
-        let (rest, version) = take_u16(payload).unwrap();
+        let (rest, version) = take_u16(payload)?;
 
         if version == 9 {
-            let (rest, count) = take_u16(rest).unwrap();
-            let (rest, sys_uptime) = take_u32(rest).unwrap();
-            let (rest, timestamp) = take_u32(rest).unwrap();
-            let (rest, flow_sequence) = take_u32(rest).unwrap();
-            let (rest, source_id) = take_u32(rest).unwrap();
-            let (_rest, flow_sets) = FlowSet::to_vec(rest).unwrap();
+            let (rest, count) = take_u16(rest)?;
+            let (rest, sys_uptime) = take_u32(rest)?;
+            let (rest, timestamp) = take_u32(rest)?;
+            let (rest, flow_sequence) = take_u32(rest)?;
+            let (rest, source_id) = take_u32(rest)?;
+            let (_rest, flow_sets) = FlowSet::to_vec(rest)?;
 
             Ok(NetFlow9 {
                 version: version,
