@@ -13,8 +13,17 @@ pub struct OptionTemplate {
 }
 
 impl OptionTemplate {
+    const HEADER_LEN: u16 = 4; // id + length + id + scope_count + option_count
+
+    pub fn get_header_len() -> u16 {
+        Self::HEADER_LEN
+    }
+
     pub fn new(template: OptionTemplateItem) -> OptionTemplate {
-        let length = 10 + template.option_count * 4 + template.scope_count * 4;
+        let length = Self::get_header_len()
+            + OptionTemplateItem::get_header_len()
+            + template.option_count * 4
+            + template.scope_count * 4;
 
         OptionTemplate {
             flowset_id: OPTION_FLOWSET_ID,
@@ -56,17 +65,25 @@ impl OptionTemplate {
         u16_to_bytes(self.flowset_id, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
 
-        u16_to_bytes(self.length, &mut u16_buf);
+        // TODO: add length
+        // u16_to_bytes(self.length, &mut u16_buf);
+        // bytes.append(&mut u16_buf.to_vec());
+
+        let mut option = self.templates.to_bytes();
+        // bytes.append(&mut self.templates.to_bytes());
+
+        // option's padding is always 2 bytes
+        if self.is_padding() && option.len() % 4 != 0 {
+            option.push(0);
+            option.push(0);
+        }
+
+        // add length, calculated from option body
+        let length = Self::get_header_len() + option.len() as u16;
+        u16_to_bytes(length, &mut u16_buf);
         bytes.append(&mut u16_buf.to_vec());
 
-        bytes.append(&mut self.templates.to_bytes());
-
-        debug!("Bytes length before padding: {:?}", bytes.len());
-
-        if self.is_padding() && self.length % 4 != 0 {
-            bytes.push(0);
-            bytes.push(0);
-        }
+        bytes.append(&mut option);
 
         bytes
     }
@@ -92,7 +109,7 @@ mod test_option_template {
 
     #[test]
     fn test_option_template() {
-        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (packet_bytes, _) = test_data::OPTION_DATA;
         let option: ParseResult<OptionTemplate> = OptionTemplate::from_bytes(&packet_bytes);
         assert!(option.is_ok());
 
@@ -109,7 +126,7 @@ mod test_option_template {
 
     #[test]
     fn test_to_bytes() {
-        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (packet_bytes, padding_bytes) = test_data::OPTION_DATA;
         let (_rest, mut option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
 
         option.set_padding(false);
@@ -117,9 +134,7 @@ mod test_option_template {
         assert_eq!(&bytes.as_slice(), &packet_bytes);
 
         // if padding exists
-        let mut packet_bytes: Vec<u8> = Vec::from(packet_bytes);
-        packet_bytes.push(0);
-        packet_bytes.push(0);
+        let mut packet_bytes: Vec<u8> = Vec::from(&padding_bytes[..]);
         option.set_padding(true);
         let bytes = option.to_bytes();
         assert_eq!(bytes.len() % 4, 0);
@@ -128,7 +143,7 @@ mod test_option_template {
 
     #[test]
     fn test_convert() {
-        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (packet_bytes, _) = test_data::OPTION_DATA;
         let (_rest, option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
         let bytes = option.to_bytes();
 
@@ -140,7 +155,7 @@ mod test_option_template {
 
     #[test]
     fn test_byte_length() {
-        let packet_bytes = &test_data::OPTION_DATA[..];
+        let (packet_bytes, _) = test_data::OPTION_DATA;
         let (_rest, mut option) = OptionTemplate::from_bytes(&packet_bytes).unwrap();
 
         assert_eq!(option.byte_length(), packet_bytes.len());

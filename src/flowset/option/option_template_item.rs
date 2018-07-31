@@ -120,6 +120,10 @@ impl OptionTemplateItem {
     pub fn byte_length(&self) -> usize {
         self.to_bytes().len()
     }
+
+    pub fn get_header_len() -> u16 {
+        Self::HEADER_LEN
+    }
 }
 
 impl TemplateParser for OptionTemplateItem {
