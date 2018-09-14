@@ -1,25 +1,14 @@
 #[cfg(test)]
-mod flowset_tests;
-#[cfg(test)]
 mod test_data;
 
-mod data_template;
-pub use self::data_template::*;
+mod template;
+pub use self::template::*;
 
-mod option_template;
-use self::option_template::*;
+mod option;
+pub use self::option::*;
 
-mod data_flow;
-use self::data_flow::*;
-
-mod data_template_item;
-use self::data_template_item::*;
-
-mod option_template_item;
-use self::option_template_item::*;
-
-mod record;
-use self::record::*;
+mod data;
+pub use self::data::*;
 
 mod template_parser;
 use self::template_parser::*;
@@ -27,7 +16,7 @@ use self::template_parser::*;
 use error::ParseResult;
 use util::take_u16;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FlowSet {
     DataTemplate(DataTemplate),
     OptionTemplate(OptionTemplate),
@@ -37,23 +26,23 @@ pub enum FlowSet {
 impl FlowSet {
     // TODO: parse with template
     pub fn from_bytes(data: &[u8]) -> ParseResult<FlowSet> {
-        let (_, id) = take_u16(&data).unwrap(); // num::IResult
+        let (_, id) = take_u16(&data)?;
 
         info!("parsed flowset id: {:?}", id);
 
         match id {
             TEMPLATE_FLOWSET_ID => {
-                let (next, template) = DataTemplate::from_bytes(&data).unwrap(); // Err
+                let (next, template) = DataTemplate::from_bytes(&data)?;
                 debug!("parsed DataTemplate: {:?}", template);
                 Ok((next, FlowSet::DataTemplate(template)))
             }
             OPTION_FLOWSET_ID => {
-                let (next, option) = OptionTemplate::from_bytes(&data).unwrap();
+                let (next, option) = OptionTemplate::from_bytes(&data)?;
                 debug!("parsed OptionTemplate: {:?}", option);
                 Ok((next, FlowSet::OptionTemplate(option)))
             }
             _ => {
-                let (next, flow) = DataFlow::from_bytes_notemplate(&data).unwrap();
+                let (next, flow) = DataFlow::from_bytes_notemplate(&data)?;
                 debug!("parsed DataFlow: {:?}", flow);
                 Ok((next, FlowSet::DataFlow(flow)))
             }
@@ -65,7 +54,7 @@ impl FlowSet {
         let mut sets: Vec<FlowSet> = Vec::new();
 
         while rest.len() > 0 {
-            let (next, flowset) = FlowSet::from_bytes(&rest).unwrap();
+            let (next, flowset) = FlowSet::from_bytes(&rest)?;
             sets.push(flowset);
             rest = next;
         }
@@ -81,6 +70,50 @@ impl FlowSet {
             FlowSet::OptionTemplate(template) => template.to_bytes(),
             FlowSet::DataFlow(dataflow) => dataflow.to_bytes(),
         }
+    }
+
+    // TODO: can use macro?
+    pub fn is_template(&self) -> bool {
+        match self {
+            &FlowSet::DataTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_option(&self) -> bool {
+        match self {
+            &FlowSet::OptionTemplate(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_dataflow(&self) -> bool {
+        match self {
+            &FlowSet::DataFlow(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
+}
+
+impl From<DataFlow> for FlowSet {
+    fn from(data: DataFlow) -> Self {
+        FlowSet::DataFlow(data)
+    }
+}
+
+impl From<OptionTemplate> for FlowSet {
+    fn from(option: OptionTemplate) -> Self {
+        FlowSet::OptionTemplate(option)
+    }
+}
+
+impl From<DataTemplate> for FlowSet {
+    fn from(template: DataTemplate) -> Self {
+        FlowSet::DataTemplate(template)
     }
 }
 
@@ -150,5 +183,13 @@ mod test_flowset {
         let bytes = set.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &test_data.as_ref());
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let test_data = test_data::FLOWSET_DATA;
+        let (_, set) = FlowSet::from_bytes(&test_data).unwrap();
+
+        assert_eq!(set.byte_length(), test_data.len());
     }
 }

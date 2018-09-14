@@ -1,12 +1,13 @@
-use error::ParseResult;
+use error::{to_result, ParseResult};
 use nom::be_u16;
 use util::u16_to_bytes;
 
+// TODO: move to parser utility?
 named!(netflowfield <&[u8], TypeLengthField>,
        dbg!(map!(count!(map!(take!(2), |i| be_u16(i).unwrap().1), 2),
                  |v: Vec<_>| TypeLengthField::new(v[0], v[1]))));
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct TypeLengthField {
     pub type_id: u16,
     pub length: u16,
@@ -25,7 +26,7 @@ impl TypeLengthField {
         let mut field_vec = Vec::with_capacity(count as usize);
 
         for _ in 0..count {
-            let (next, field) = netflowfield(&rest).unwrap();
+            let (next, field) = to_result(netflowfield(&rest))?;
             field_vec.push(field);
             rest = next;
         }

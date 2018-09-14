@@ -3,7 +3,7 @@ use field::{FlowField, TypeLengthField};
 use flowset::{Record, TemplateParser};
 use util::{take_u16, u16_to_bytes};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionTemplateItem {
     pub template_id: u16,
     pub scope_count: u16,
@@ -17,36 +17,39 @@ impl OptionTemplateItem {
 
     pub fn new(
         template_id: u16,
-        scope_count: u16,
-        option_count: u16,
         scopes: Vec<TypeLengthField>,
         options: Vec<TypeLengthField>,
     ) -> Self {
         OptionTemplateItem {
             template_id: template_id,
-            scope_count: scope_count,
-            option_count: option_count,
+            scope_count: scopes.len() as u16,
+            option_count: options.len() as u16,
             scopes: scopes,
             options: options,
         }
     }
 
+    /// Return OptionTemplateItem from data
+    /// length is OptionTemplateItem's length, not OptionTemplate's
+    /// validate with length, need this?
     pub fn from_bytes(length: u16, data: &[u8]) -> ParseResult<OptionTemplateItem> {
-        let (rest, template_id) = take_u16(&data).unwrap();
-        let (rest, scope_length) = take_u16(&rest).unwrap();
-        let (rest, option_length) = take_u16(&rest).unwrap();
+        let (rest, template_id) = take_u16(&data)?;
+        let (rest, scope_length) = take_u16(&rest)?;
+        let (rest, option_length) = take_u16(&rest)?;
 
+        // TODO: need this check?
         if (length - OptionTemplateItem::HEADER_LEN) >= (scope_length + option_length) {
             let scope_count = scope_length / 4; // TODO: remove mgk num
             let (rest, scopes): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(scope_count as usize, &rest).unwrap();
+                TypeLengthField::to_vec(scope_count as usize, &rest)?;
 
             let option_count = option_length / 4;
             let (rest, options): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(option_count as usize, &rest).unwrap();
+                TypeLengthField::to_vec(option_count as usize, &rest)?;
 
             // remove padding
             Ok((
+                // TODO: extract as function
                 if length - OptionTemplateItem::HEADER_LEN - scope_length - option_length != 0 {
                     let pad_len: usize =
                         (length - OptionTemplateItem::HEADER_LEN - scope_length - option_length)
@@ -55,7 +58,13 @@ impl OptionTemplateItem {
                 } else {
                     rest
                 },
-                OptionTemplateItem::new(template_id, scope_count, option_count, scopes, options),
+                OptionTemplateItem {
+                    template_id: template_id,
+                    scope_count: scope_count,
+                    option_count: option_count,
+                    scopes: scopes,
+                    options: options,
+                },
             ))
         } else {
             Err(Error::InvalidLength)
@@ -74,7 +83,7 @@ impl OptionTemplateItem {
         debug!("rest_length = {:?}", rest_length);
 
         while rest_length > 0 {
-            let (next, template) = OptionTemplateItem::from_bytes(rest_length, rest).unwrap();
+            let (next, template) = OptionTemplateItem::from_bytes(rest_length, rest)?;
             rest_length -= OptionTemplateItem::HEADER_LEN + template.get_fields_len();
             templates.push(template);
             rest = next;
@@ -106,6 +115,15 @@ impl OptionTemplateItem {
 
         bytes
     }
+
+    // TODO: extract as trait
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
+
+    pub fn get_header_len() -> u16 {
+        Self::HEADER_LEN
+    }
 }
 
 impl TemplateParser for OptionTemplateItem {
@@ -126,8 +144,7 @@ impl TemplateParser for OptionTemplateItem {
         let mut scopes: Vec<FlowField> = Vec::with_capacity(self.scopes.len());
 
         for field in &self.scopes {
-            let (next, flow_field) =
-                FlowField::from_bytes(field.type_id, field.length, rest).unwrap();
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)?;
 
             scopes.push(flow_field);
             rest = next;
@@ -135,8 +152,7 @@ impl TemplateParser for OptionTemplateItem {
 
         let mut options: Vec<FlowField> = Vec::with_capacity(self.options.len());
         for field in &self.options {
-            let (next, flow_field) =
-                FlowField::from_bytes(field.type_id, field.length, rest).unwrap();
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, rest)?;
 
             options.push(flow_field);
             rest = next;
@@ -208,5 +224,13 @@ mod option_template_test {
         let bytes = temp.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &data);
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let (len, data) = test_data::OPTION_TEMPLATE_ITEM;
+        let (_rest, temp) = OptionTemplateItem::from_bytes(len, &data).unwrap();
+
+        assert_eq!(temp.byte_length(), data.len());
     }
 }

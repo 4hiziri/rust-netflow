@@ -1,6 +1,8 @@
 use field::FlowField;
 
-#[derive(Debug)]
+// TODO: need test
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Record {
     Data(DataRecord),
     OptionData(OptionRecord),
@@ -15,17 +17,22 @@ impl Record {
         Record::OptionData(OptionRecord::new(scopes, options))
     }
 
-    // TODO: need test
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             Record::Data(data) => data.to_bytes(),
             Record::OptionData(option) => option.to_bytes(),
         }
     }
+
+    // TODO: Need convertor?
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 // TODO: accessing method
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataRecord {
     fields: Vec<FlowField>,
 }
@@ -44,9 +51,13 @@ impl DataRecord {
 
         bytes
     }
+
+    fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionRecord {
     scope_fields: Vec<FlowField>,
     option_fields: Vec<FlowField>,
@@ -73,4 +84,10 @@ impl OptionRecord {
 
         bytes
     }
+
+    fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
+
+// TODO: add test

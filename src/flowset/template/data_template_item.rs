@@ -3,7 +3,7 @@ use field::{FlowField, TypeLengthField};
 use flowset::{Record, TemplateParser};
 use util::{take_u16, u16_to_bytes};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataTemplateItem {
     pub template_id: u16,
     pub field_count: u16,
@@ -13,31 +13,32 @@ pub struct DataTemplateItem {
 impl DataTemplateItem {
     const HEADER_LEN: u16 = 4; // len(id + length) = 4
 
-    pub fn new(
-        template_id: u16,
-        field_count: u16,
-        fields: Vec<TypeLengthField>,
-    ) -> DataTemplateItem {
+    pub fn new(template_id: u16, fields: Vec<TypeLengthField>) -> DataTemplateItem {
         DataTemplateItem {
             template_id: template_id,
-            field_count: field_count,
+            field_count: fields.len() as u16,
             fields: fields,
         }
     }
 
+    /// Return DataTemplateItem from data
+    /// length is DataTemplateItem's length, not DataTemplate's
+    /// validate with length, need this?
     pub fn from_bytes(length: u16, data: &[u8]) -> ParseResult<DataTemplateItem> {
-        let (rest, template_id) = take_u16(&data).unwrap();
-        let (rest, field_count) = take_u16(&rest).unwrap();
-
-        debug!("field_count is {}", field_count);
+        let (rest, template_id) = take_u16(&data)?;
+        let (rest, field_count) = take_u16(&rest)?;
 
         if length - DataTemplateItem::HEADER_LEN >= field_count * 4 {
             let (rest, fields): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(field_count as usize, &rest).unwrap();
+                TypeLengthField::to_vec(field_count as usize, &rest)?;
 
             Ok((
                 rest,
-                DataTemplateItem::new(template_id, field_count, fields),
+                DataTemplateItem {
+                    template_id: template_id,
+                    field_count: field_count,
+                    fields: fields,
+                },
             ))
         } else {
             Err(Error::InvalidLength)
@@ -56,7 +57,7 @@ impl DataTemplateItem {
         debug!("rest_length = {:?}", rest_length);
 
         while rest_length > 0 {
-            let (next, template) = DataTemplateItem::from_bytes(rest_length, rest).unwrap();
+            let (next, template) = DataTemplateItem::from_bytes(rest_length, rest)?;
             rest_length -= DataTemplateItem::HEADER_LEN + template.get_fields_len();
             templates.push(template);
             rest = next;
@@ -83,6 +84,10 @@ impl DataTemplateItem {
 
         bytes
     }
+
+    pub fn byte_length(&self) -> usize {
+        self.to_bytes().len()
+    }
 }
 
 impl TemplateParser for DataTemplateItem {
@@ -100,8 +105,7 @@ impl TemplateParser for DataTemplateItem {
         let mut fields: Vec<FlowField> = Vec::with_capacity(self.fields.len());
 
         for field in &self.fields {
-            let (next, flow_field) =
-                FlowField::from_bytes(field.type_id, field.length, &rest).unwrap();
+            let (next, flow_field) = FlowField::from_bytes(field.type_id, field.length, &rest)?;
 
             fields.push(flow_field);
             rest = next;
@@ -164,5 +168,13 @@ mod data_template_test {
         let bytes = temp.to_bytes();
 
         assert_eq!(&bytes.as_slice(), &data.as_ref());
+    }
+
+    #[test]
+    fn test_byte_length() {
+        let (len, data) = test_data::TEMPLATE_FIELDS;
+        let (_rest, temp) = DataTemplateItem::from_bytes(len, &data).unwrap();
+
+        assert_eq!(temp.byte_length(), data.len());
     }
 }

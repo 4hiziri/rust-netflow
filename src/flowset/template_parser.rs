@@ -12,7 +12,7 @@ pub trait TemplateParser {
         let mut rest = payload;
 
         for _ in 0..record_count {
-            let (next, rec) = self.parse_dataflow(rest).unwrap();
+            let (next, rec) = self.parse_dataflow(rest)?;
             record_vec.push(rec);
             rest = next;
         }
