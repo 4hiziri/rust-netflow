@@ -39,7 +39,7 @@ pub struct DataRecord {
 
 impl DataRecord {
     fn new(fields: Vec<FlowField>) -> DataRecord {
-        DataRecord { fields: fields }
+        DataRecord { fields }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -52,6 +52,7 @@ impl DataRecord {
         bytes
     }
 
+    #[allow(dead_code)]
     fn byte_length(&self) -> usize {
         self.to_bytes().len()
     }
@@ -85,6 +86,7 @@ impl OptionRecord {
         bytes
     }
 
+    #[allow(dead_code)]
     fn byte_length(&self) -> usize {
         self.to_bytes().len()
     }

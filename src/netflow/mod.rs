@@ -31,10 +31,10 @@ impl NetFlow9 {
         NetFlow9 {
             version: 9,
             count: flowsets.len() as u16,
-            sys_uptime: sys_uptime,
-            timestamp: timestamp,
-            flow_sequence: flow_sequence,
-            source_id: source_id,
+            sys_uptime,
+            timestamp,
+            flow_sequence,
+            source_id,
             flow_sets: flowsets,
         }
     }
@@ -48,16 +48,16 @@ impl NetFlow9 {
             let (rest, timestamp) = take_u32(rest)?;
             let (rest, flow_sequence) = take_u32(rest)?;
             let (rest, source_id) = take_u32(rest)?;
-            let (_rest, flow_sets) = FlowSet::to_vec(rest)?;
+            let (_rest, flow_sets) = FlowSet::parse_bytes(rest)?;
 
             Ok(NetFlow9 {
-                version: version,
-                count: count,
-                sys_uptime: sys_uptime,
-                timestamp: timestamp,
-                flow_sequence: flow_sequence,
-                source_id: source_id,
-                flow_sets: flow_sets,
+                version,
+                count,
+                sys_uptime,
+                timestamp,
+                flow_sequence,
+                source_id,
+                flow_sets,
             })
         } else {
             Err(Error::InvalidFieldValue)
@@ -106,8 +106,7 @@ impl NetFlow9 {
                 FlowSet::DataFlow(dataflow) => dataflow.is_padding(),
                 FlowSet::OptionTemplate(option) => option.is_padding(),
                 _ => true,
-            })
-            .fold(true, |acc, flag| acc && flag)
+            }).all(|flag| flag)
     }
 
     pub fn set_padding(&mut self, is_padding: bool) {

@@ -12,14 +12,14 @@ pub struct MacAddr {
 }
 
 impl MacAddr {
-    pub fn new(a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> MacAddr {
+    pub fn new(b1: u8, b2: u8, b3: u8, b4: u8, b5: u8, b6: u8) -> MacAddr {
         MacAddr {
-            a: a,
-            b: b,
-            c: c,
-            d: d,
-            e: e,
-            f: f,
+            a: b1,
+            b: b2,
+            c: b3,
+            d: b4,
+            e: b5,
+            f: b6,
         }
     }
 

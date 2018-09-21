@@ -22,15 +22,16 @@ impl DataTemplate {
 
         DataTemplate {
             flowset_id: TEMPLATE_FLOWSET_ID,
-            length: length,
-            templates: templates,
+            length,
+            templates,
         }
     }
 
     pub fn from_bytes(data: &[u8]) -> ParseResult<DataTemplate> {
         let (rest, flowset_id) = take_u16(&data)?;
         let (rest, flowset_length) = take_u16(&rest)?;
-        let (rest, templates) = DataTemplateItem::to_vec(flowset_length - Self::HEADER_LEN, &rest)?;
+        let (rest, templates) =
+            DataTemplateItem::parse_bytes(flowset_length - Self::HEADER_LEN, &rest)?;
 
         if flowset_id == TEMPLATE_FLOWSET_ID {
             Ok((
@@ -38,7 +39,7 @@ impl DataTemplate {
                 DataTemplate {
                     flowset_id: 0,
                     length: flowset_length,
-                    templates: templates,
+                    templates,
                 },
             ))
         } else {

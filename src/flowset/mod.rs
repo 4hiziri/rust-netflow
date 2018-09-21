@@ -49,11 +49,11 @@ impl FlowSet {
         }
     }
 
-    pub fn to_vec<'a>(data: &'a [u8]) -> ParseResult<'a, Vec<FlowSet>> {
+    pub fn parse_bytes<'a>(data: &'a [u8]) -> ParseResult<'a, Vec<FlowSet>> {
         let mut rest = data;
         let mut sets: Vec<FlowSet> = Vec::new();
 
-        while rest.len() > 0 {
+        while !rest.is_empty() {
             let (next, flowset) = FlowSet::from_bytes(&rest)?;
             sets.push(flowset);
             rest = next;
@@ -75,21 +75,21 @@ impl FlowSet {
     // TODO: can use macro?
     pub fn is_template(&self) -> bool {
         match self {
-            &FlowSet::DataTemplate(_) => true,
+            FlowSet::DataTemplate(_) => true,
             _ => false,
         }
     }
 
     pub fn is_option(&self) -> bool {
         match self {
-            &FlowSet::OptionTemplate(_) => true,
+            FlowSet::OptionTemplate(_) => true,
             _ => false,
         }
     }
 
     pub fn is_dataflow(&self) -> bool {
         match self {
-            &FlowSet::DataFlow(_) => true,
+            FlowSet::DataFlow(_) => true,
             _ => false,
         }
     }
@@ -138,7 +138,7 @@ mod test_flowset {
     #[test]
     fn test_to_vec() {
         let test_data = test_data::MULTI_FLOWSET_DATA;
-        let sets = FlowSet::to_vec(&test_data);
+        let sets = FlowSet::parse_bytes(&test_data);
         assert!(sets.is_ok());
         let (rest, sets) = sets.unwrap();
 

@@ -15,13 +15,10 @@ pub struct TypeLengthField {
 
 impl TypeLengthField {
     pub fn new(type_id: u16, length: u16) -> TypeLengthField {
-        TypeLengthField {
-            type_id: type_id,
-            length: length,
-        }
+        TypeLengthField { type_id, length }
     }
 
-    pub fn to_vec(count: usize, data: &[u8]) -> ParseResult<Vec<TypeLengthField>> {
+    pub fn parse_bytes(count: usize, data: &[u8]) -> ParseResult<Vec<TypeLengthField>> {
         let mut rest = data;
         let mut field_vec = Vec::with_capacity(count as usize);
 
@@ -56,7 +53,7 @@ mod test_tlf {
     #[test]
     fn test_to_vec() {
         let (len, testdata) = test_data::TYPE_LENGTH_FIELD;
-        let (_rest, fields) = TypeLengthField::to_vec(len, &testdata).unwrap();
+        let (_rest, fields) = TypeLengthField::parse_bytes(len, &testdata).unwrap();
         assert_eq!(fields.len(), len);
         assert_eq!(fields[0].type_id, 21);
         assert_eq!(fields[0].length, 4);
@@ -65,7 +62,7 @@ mod test_tlf {
     #[test]
     fn test_to_bytes() {
         let (len, testdata) = test_data::TYPE_LENGTH_FIELD;
-        let (_rest, fields) = TypeLengthField::to_vec(len, &testdata).unwrap();
+        let (_rest, fields) = TypeLengthField::parse_bytes(len, &testdata).unwrap();
         let bytes = fields[0].to_bytes();
         assert_eq!(bytes, [0x00, 0x15, 0x00, 0x04]);
     }

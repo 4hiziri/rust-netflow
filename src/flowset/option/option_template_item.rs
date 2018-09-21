@@ -21,11 +21,11 @@ impl OptionTemplateItem {
         options: Vec<TypeLengthField>,
     ) -> Self {
         OptionTemplateItem {
-            template_id: template_id,
+            template_id,
             scope_count: scopes.len() as u16,
             option_count: options.len() as u16,
-            scopes: scopes,
-            options: options,
+            scopes,
+            options,
         }
     }
 
@@ -41,11 +41,11 @@ impl OptionTemplateItem {
         if (length - OptionTemplateItem::HEADER_LEN) >= (scope_length + option_length) {
             let scope_count = scope_length / 4; // TODO: remove mgk num
             let (rest, scopes): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(scope_count as usize, &rest)?;
+                TypeLengthField::parse_bytes(scope_count as usize, &rest)?;
 
             let option_count = option_length / 4;
             let (rest, options): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(option_count as usize, &rest)?;
+                TypeLengthField::parse_bytes(option_count as usize, &rest)?;
 
             // remove padding
             Ok((
@@ -59,11 +59,11 @@ impl OptionTemplateItem {
                     rest
                 },
                 OptionTemplateItem {
-                    template_id: template_id,
-                    scope_count: scope_count,
-                    option_count: option_count,
-                    scopes: scopes,
-                    options: options,
+                    template_id,
+                    scope_count,
+                    option_count,
+                    scopes,
+                    options,
                 },
             ))
         } else {
@@ -75,7 +75,7 @@ impl OptionTemplateItem {
         self.scope_count * 4 + self.option_count * 4
     }
 
-    pub fn to_vec(length: u16, data: &[u8]) -> ParseResult<Vec<OptionTemplateItem>> {
+    pub fn parse_bytes(length: u16, data: &[u8]) -> ParseResult<Vec<OptionTemplateItem>> {
         let mut templates: Vec<Self> = Vec::new();
         let mut rest_length = length;
         let mut rest = data;
@@ -133,10 +133,9 @@ impl TemplateParser for OptionTemplateItem {
 
     // field_count is u16 and a entry is 4-bytes len.
     fn get_template_len(&self) -> u16 {
-        self.scopes[..].into_iter().fold(0, |sum, i| sum + i.length)
-            + self.options[..]
-                .into_iter()
-                .fold(0, |sum, i| sum + i.length)
+        self.scopes[..].into_iter().fold(0, |sum, i| sum + i.length) + self.options[..]
+            .into_iter()
+            .fold(0, |sum, i| sum + i.length)
     }
 
     fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> ParseResult<'a, Record> {
@@ -191,7 +190,7 @@ mod option_template_test {
     fn test_to_vec() {
         // TODO: new data and more test
         let (len, data) = test_data::OPTION_TEMPLATE_ITEM;
-        let (rest, temp) = OptionTemplateItem::to_vec(len, &data).unwrap();
+        let (rest, temp) = OptionTemplateItem::parse_bytes(len, &data).unwrap();
 
         assert_eq!(rest.len(), 0);
         assert_eq!(temp.len(), 1);

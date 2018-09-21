@@ -15,9 +15,9 @@ impl DataTemplateItem {
 
     pub fn new(template_id: u16, fields: Vec<TypeLengthField>) -> DataTemplateItem {
         DataTemplateItem {
-            template_id: template_id,
+            template_id,
             field_count: fields.len() as u16,
-            fields: fields,
+            fields,
         }
     }
 
@@ -30,14 +30,14 @@ impl DataTemplateItem {
 
         if length - DataTemplateItem::HEADER_LEN >= field_count * 4 {
             let (rest, fields): (&[u8], Vec<TypeLengthField>) =
-                TypeLengthField::to_vec(field_count as usize, &rest)?;
+                TypeLengthField::parse_bytes(field_count as usize, &rest)?;
 
             Ok((
                 rest,
                 DataTemplateItem {
-                    template_id: template_id,
-                    field_count: field_count,
-                    fields: fields,
+                    template_id,
+                    field_count,
+                    fields,
                 },
             ))
         } else {
@@ -49,7 +49,7 @@ impl DataTemplateItem {
         self.field_count * 4
     }
 
-    pub fn to_vec(length: u16, data: &[u8]) -> ParseResult<Vec<DataTemplateItem>> {
+    pub fn parse_bytes(length: u16, data: &[u8]) -> ParseResult<Vec<DataTemplateItem>> {
         let mut templates: Vec<Self> = Vec::new();
         let mut rest_length = length;
         let mut rest = data;
@@ -142,10 +142,10 @@ mod data_template_test {
     }
 
     #[test]
-    fn test_to_vec() {
+    fn test_parse_bytes() {
         // TODO: new data
         let (len, data) = test_data::TEMPLATE_FIELDS;
-        let (rest, temp) = DataTemplateItem::to_vec(len, &data).unwrap();
+        let (rest, temp) = DataTemplateItem::parse_bytes(len, &data).unwrap();
 
         assert_eq!(rest.len(), 0);
         assert_eq!(temp[0].fields.len(), 21);

@@ -26,7 +26,7 @@ impl DataFlow {
         }
 
         DataFlow {
-            flowset_id: flowset_id,
+            flowset_id,
             length: Self::HEADER_LEN + bytes.len() as u16,
             record_bytes: bytes,
             records: Some(records),
@@ -46,8 +46,8 @@ impl DataFlow {
         Ok((
             rest,
             DataFlow {
-                flowset_id: flowset_id,
-                length: length,
+                flowset_id,
+                length,
                 record_bytes: record_bytes.to_vec(),
                 records: None,
                 is_padding: length % 4 == 0,
@@ -77,7 +77,7 @@ impl DataFlow {
             .collect();
 
         // can use pattern-matching? research list match
-        if match_template.len() >= 1 {
+        if !match_template.is_empty() {
             let template = match_template[0];
             let bytes = rest;
             let (rest, records) = template.parse_dataflows(length - Self::HEADER_LEN, rest)?;
@@ -88,11 +88,11 @@ impl DataFlow {
             Ok((
                 rest_not_padding,
                 DataFlow {
-                    flowset_id: flowset_id,
-                    length: length,
+                    flowset_id,
+                    length,
                     record_bytes: bytes[..(length as usize - 4)].to_vec(),
                     records: Some(records),
-                    is_padding: is_padding,
+                    is_padding,
                 },
             ))
         } else {

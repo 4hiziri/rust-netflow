@@ -27,7 +27,7 @@ impl OptionTemplate {
 
         OptionTemplate {
             flowset_id: OPTION_FLOWSET_ID,
-            length: length,
+            length,
             templates: template,
             is_padding: true,
         }
@@ -47,10 +47,10 @@ impl OptionTemplate {
             Ok((
                 rest,
                 OptionTemplate {
-                    flowset_id: flowset_id,
-                    length: length,
+                    flowset_id,
+                    length,
                     templates: option_item,
-                    is_padding: is_padding,
+                    is_padding,
                 },
             ))
         } else {
@@ -134,7 +134,7 @@ mod test_option_template {
         assert_eq!(&bytes.as_slice(), &packet_bytes);
 
         // if padding exists
-        let mut packet_bytes: Vec<u8> = Vec::from(&padding_bytes[..]);
+        let packet_bytes: Vec<u8> = Vec::from(&padding_bytes[..]);
         option.set_padding(true);
         let bytes = option.to_bytes();
         assert_eq!(bytes.len() % 4, 0);

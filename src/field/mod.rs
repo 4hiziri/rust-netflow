@@ -40,9 +40,9 @@ pub struct FlowField {
 impl FlowField {
     pub fn new(type_id: u16, length: u16, value: FieldValue) -> FlowField {
         FlowField {
-            type_id: type_id,
-            length: length,
-            value: value,
+            type_id,
+            length,
+            value,
         }
     }
 
