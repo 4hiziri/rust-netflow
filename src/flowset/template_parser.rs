@@ -1,5 +1,5 @@
-use error::ParseResult;
-use flowset::Record;
+use crate::error::ParseResult;
+use crate::flowset::Record;
 
 pub trait TemplateParser {
     fn get_id(&self) -> u16;

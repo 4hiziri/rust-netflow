@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod test_data;
 
-use error::Error;
-use flowset::FlowSet;
-use util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
+use crate::error::Error;
+use crate::flowset::FlowSet;
+use crate::util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
 
 // Netflow V9 -> Header + (Template* Option* Data*)
 
@@ -106,11 +106,12 @@ impl NetFlow9 {
                 FlowSet::DataFlow(dataflow) => dataflow.is_padding(),
                 FlowSet::OptionTemplate(option) => option.is_padding(),
                 _ => true,
-            }).all(|flag| flag)
+            })
+            .all(|flag| flag)
     }
 
     pub fn set_padding(&mut self, is_padding: bool) {
-        for mut flowset in &mut self.flow_sets {
+        for flowset in &mut self.flow_sets {
             match flowset {
                 FlowSet::DataFlow(dataflow) => dataflow.set_padding(is_padding),
                 FlowSet::OptionTemplate(option) => option.set_padding(is_padding),
@@ -123,7 +124,7 @@ impl NetFlow9 {
 #[cfg(test)]
 mod test_netflow {
     use super::test_data;
-    use netflow::*;
+    use crate::netflow::*;
 
     #[test]
     fn test_netflow9() {
@@ -161,7 +162,7 @@ mod test_netflow {
         let packet_bytes = &test_data::NETFLOWV9_DATA[..];
         let mut netflow: NetFlow9 = NetFlow9::from_bytes(&packet_bytes).unwrap();
 
-        for mut flowset in &mut netflow.flow_sets {
+        for flowset in &mut netflow.flow_sets {
             match flowset {
                 FlowSet::OptionTemplate(ref mut opt) => opt.set_padding(false),
                 _ => (),

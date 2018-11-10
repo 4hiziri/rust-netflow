@@ -1,5 +1,5 @@
 use byteorder::{BigEndian, ByteOrder};
-use error;
+use crate::error;
 use nom::{be_u16, be_u32, be_u64};
 
 named!(inner_take_u16 <&[u8], u16>, map!(take!(2), |i| be_u16(i).unwrap().1));
@@ -60,7 +60,7 @@ pub fn u128_to_bytes(src: u128, dst: &mut [u8; 16]) {
 
 #[cfg(test)]
 mod test_util {
-    use util;
+    use crate::util;
 
     #[test]
     fn test_take() {

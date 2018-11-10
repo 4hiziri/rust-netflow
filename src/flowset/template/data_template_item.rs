@@ -1,7 +1,7 @@
-use error::{Error, ParseResult};
-use field::{FlowField, TypeLengthField};
-use flowset::{Record, TemplateParser};
-use util::{take_u16, u16_to_bytes};
+use crate::error::{Error, ParseResult};
+use crate::field::{FlowField, TypeLengthField};
+use crate::flowset::{Record, TemplateParser};
+use crate::util::{take_u16, u16_to_bytes};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataTemplateItem {
@@ -120,7 +120,7 @@ impl TemplateParser for DataTemplateItem {
 #[cfg(test)]
 mod data_template_test {
     use super::{DataTemplateItem, TemplateParser};
-    use flowset::test_data;
+    use crate::flowset::test_data;
 
     #[test]
     fn test_parse() {

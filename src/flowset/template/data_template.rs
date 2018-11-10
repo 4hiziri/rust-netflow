@@ -1,6 +1,6 @@
 use super::DataTemplateItem;
-use error::{Error, ParseResult};
-use util::{take_u16, u16_to_bytes};
+use crate::error::{Error, ParseResult};
+use crate::util::{take_u16, u16_to_bytes};
 
 pub const TEMPLATE_FLOWSET_ID: u16 = 0;
 
@@ -77,8 +77,8 @@ impl DataTemplate {
 #[cfg(test)]
 mod data_template_test {
     use super::DataTemplate;
-    use error::ParseResult;
-    use flowset::test_data;
+    use crate::error::ParseResult;
+    use crate::flowset::test_data;
 
     #[test]
     fn test_data_template() {

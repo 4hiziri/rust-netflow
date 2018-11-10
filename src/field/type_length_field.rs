@@ -1,6 +1,6 @@
-use error::{to_result, ParseResult};
+use crate::error::{to_result, ParseResult};
 use nom::be_u16;
-use util::u16_to_bytes;
+use crate::util::u16_to_bytes;
 
 // TODO: move to parser utility?
 named!(netflowfield <&[u8], TypeLengthField>,
@@ -47,8 +47,8 @@ impl TypeLengthField {
 
 #[cfg(test)]
 mod test_tlf {
-    use field::test_data;
-    use field::TypeLengthField;
+    use crate::field::test_data;
+    use crate::field::TypeLengthField;
 
     #[test]
     fn test_to_vec() {

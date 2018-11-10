@@ -13,8 +13,8 @@ pub use self::data::*;
 mod template_parser;
 use self::template_parser::*;
 
-use error::ParseResult;
-use util::take_u16;
+use crate::error::ParseResult;
+use crate::util::take_u16;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FlowSet {
@@ -120,7 +120,7 @@ impl From<DataTemplate> for FlowSet {
 #[cfg(test)]
 mod test_flowset {
     use super::FlowSet;
-    use flowset::test_data;
+    use crate::flowset::test_data;
 
     #[test]
     fn test_frombytes() {

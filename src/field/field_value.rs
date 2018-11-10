@@ -2,7 +2,7 @@ use super::MacAddr;
 use std::collections::HashSet;
 use std::convert::From;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use util::{
+use crate::util::{
     take_u128, take_u16, take_u32, take_u64, u128_to_bytes, u16_to_bytes, u32_to_bytes,
     u64_to_bytes,
 };

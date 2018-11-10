@@ -1,7 +1,7 @@
 use super::Record;
-use error::{Error, ParseResult};
-use flowset::TemplateParser;
-use util::{take_u16, u16_to_bytes};
+use crate::error::{Error, ParseResult};
+use crate::flowset::TemplateParser;
+use crate::util::{take_u16, u16_to_bytes};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataFlow {
@@ -167,7 +167,7 @@ impl DataFlow {
 #[cfg(test)]
 mod test_data_flow {
     use super::DataFlow;
-    use flowset::{test_data, DataTemplate};
+    use crate::flowset::{test_data, DataTemplate};
 
     #[test]
     fn from_bytes_notemplate() {

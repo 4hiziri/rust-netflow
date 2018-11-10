@@ -1,6 +1,6 @@
 use super::OptionTemplateItem;
-use error::{Error, ParseResult};
-use util::{take_u16, u16_to_bytes};
+use crate::error::{Error, ParseResult};
+use crate::util::{take_u16, u16_to_bytes};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
 
@@ -104,8 +104,8 @@ impl OptionTemplate {
 #[cfg(test)]
 mod test_option_template {
     use super::OptionTemplate;
-    use error::ParseResult;
-    use flowset::test_data;
+    use crate::error::ParseResult;
+    use crate::flowset::test_data;
 
     #[test]
     fn test_option_template() {

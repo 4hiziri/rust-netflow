@@ -4,7 +4,7 @@ mod field_types;
 #[allow(non_snake_case)]
 pub mod FieldTypes {
     #[allow(unused_imports)]
-    use field::field_types::*;
+    use crate::field::field_types::*;
 }
 
 #[allow(non_upper_case_globals)]
@@ -13,7 +13,7 @@ mod scope_types;
 #[allow(non_snake_case)]
 pub mod ScopeTypes {
     #[allow(unused_imports)]
-    use field::scope_types::*;
+    use crate::field::scope_types::*;
 }
 
 mod field_value;
@@ -28,7 +28,7 @@ pub use self::type_length_field::*;
 #[cfg(test)]
 mod test_data;
 
-use error::{Error, ParseResult};
+use crate::error::{Error, ParseResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowField {

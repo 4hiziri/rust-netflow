@@ -1,7 +1,7 @@
-use error::{Error, ParseResult};
-use field::{FlowField, TypeLengthField};
-use flowset::{Record, TemplateParser};
-use util::{take_u16, u16_to_bytes};
+use crate::error::{Error, ParseResult};
+use crate::field::{FlowField, TypeLengthField};
+use crate::flowset::{Record, TemplateParser};
+use crate::util::{take_u16, u16_to_bytes};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionTemplateItem {
@@ -164,7 +164,7 @@ impl TemplateParser for OptionTemplateItem {
 #[cfg(test)]
 mod option_template_test {
     use super::OptionTemplateItem;
-    use flowset::{test_data, TemplateParser};
+    use crate::flowset::{test_data, TemplateParser};
 
     #[test]
     fn test_parse() {
