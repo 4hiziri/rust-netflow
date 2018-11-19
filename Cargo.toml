@@ -5,9 +5,9 @@ authors = ["tkgsy <meirvg@gmail.com>"]
 edition = '2018'
 
 [dependencies]
-nom = "^3.2"
-byteorder = "1.2.2"
-log = "0.4"
+nom = ""
+byteorder = ""
+log = ""
 env_logger = ""
 lazy_static = ""
 serde = ""

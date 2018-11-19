@@ -1,22 +1,22 @@
 // TODO: Define here Error
 
 use nom;
-use nom::IResult;
+use nom::{Err, IResult};
 use std::convert::From;
 use std::error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
-pub enum Error {
-    ParseError(nom::Err),
+pub enum Error<'a> {
+    ParseError(nom::Err<&'a [u8]>),
     InvalidLength,
     InvalidFieldValue, // TODO: contain wrong field name and val
     TemplateNotFound,
     UnexpectedIncomplete,
 }
 
-impl error::Error for Error {
+impl<'a> error::Error for Error<'a> {
     fn description(&self) -> &str {
         match *self {
             Error::ParseError(ref err) => err.description(),
@@ -28,7 +28,7 @@ impl error::Error for Error {
     }
 }
 
-impl Display for Error {
+impl<'a> Display for Error<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Error::ParseError(err) => write!(f, "Parse error: {}", err),
@@ -42,19 +42,19 @@ impl Display for Error {
     }
 }
 
-impl From<nom::Err> for Error {
-    fn from(err: nom::Err) -> Error {
+impl<'a> From<nom::Err<&'a [u8]>> for Error<'a> {
+    fn from(err: nom::Err<&'a [u8]>) -> Error<'a> {
         Error::ParseError(err)
     }
 }
 
-pub type ParseResult<'a, T> = Result<(&'a [u8], T), Error>;
+pub type ParseResult<'a, T> = Result<(&'a [u8], T), Error<'a>>;
 
 // TODO: make new type
 pub fn to_result<T>(res: IResult<&[u8], T>) -> Result<(&[u8], T), Error> {
     match res {
-        IResult::Done(i, o) => Ok((i, o)),
-        IResult::Incomplete(_) => Err(Error::UnexpectedIncomplete),
-        IResult::Error(e) => Err(Error::ParseError(e)),
+        Ok(ok) => Ok(ok),
+        Err(Err::Incomplete(_)) => Err(Error::UnexpectedIncomplete),
+        Err(e) => Err(Error::ParseError(e)),
     }
 }
