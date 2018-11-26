@@ -1,4 +1,4 @@
-use crate::error::{Error, ParseResult};
+use crate::error::{NetFlowError, ParseResult};
 use crate::field::{FlowField, TypeLengthField};
 use crate::flowset::{Record, TemplateParser};
 use crate::util::{take_u16, u16_to_bytes};
@@ -67,7 +67,7 @@ impl OptionTemplateItem {
                 },
             ))
         } else {
-            Err(Error::InvalidLength)
+            Err(NetFlowError::InvalidLength)
         }
     }
 
@@ -133,9 +133,10 @@ impl TemplateParser for OptionTemplateItem {
 
     // field_count is u16 and a entry is 4-bytes len.
     fn get_template_len(&self) -> u16 {
-        self.scopes[..].into_iter().fold(0, |sum, i| sum + i.length) + self.options[..]
-            .into_iter()
-            .fold(0, |sum, i| sum + i.length)
+        self.scopes[..].into_iter().fold(0, |sum, i| sum + i.length)
+            + self.options[..]
+                .into_iter()
+                .fold(0, |sum, i| sum + i.length)
     }
 
     fn parse_dataflow<'a>(&self, payload: &'a [u8]) -> ParseResult<'a, Record> {

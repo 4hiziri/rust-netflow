@@ -28,7 +28,7 @@ pub use self::type_length_field::*;
 #[cfg(test)]
 mod test_data;
 
-use crate::error::{Error, ParseResult};
+use crate::error::{NetFlowError, ParseResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowField {
@@ -57,7 +57,7 @@ impl FlowField {
                 ),
             ))
         } else {
-            Err(Error::InvalidLength)
+            Err(NetFlowError::InvalidLength)
         }
     }
 

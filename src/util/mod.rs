@@ -18,7 +18,7 @@ pub fn take_u64(i: &[u8]) -> error::ParseResult<u64> {
 
 pub fn take_u128(i: &[u8]) -> error::ParseResult<u128> {
     if i.len() < 16 {
-        Err(error::Error::InvalidLength)
+        Err(error::NetFlowError::InvalidLength)
     } else {
         let res = (u128::from(i[0]) << 120)
             + (u128::from(i[1]) << 112)

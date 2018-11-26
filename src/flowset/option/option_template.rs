@@ -1,5 +1,5 @@
 use super::OptionTemplateItem;
-use crate::error::{Error, ParseResult};
+use crate::error::{NetFlowError, ParseResult};
 use crate::util::{take_u16, u16_to_bytes};
 
 pub const OPTION_FLOWSET_ID: u16 = 1;
@@ -54,7 +54,7 @@ impl OptionTemplate {
                 },
             ))
         } else {
-            Err(Error::InvalidLength)
+            Err(NetFlowError::InvalidLength)
         }
     }
 

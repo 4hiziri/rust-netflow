@@ -1,5 +1,5 @@
 use super::Record;
-use crate::error::{Error, ParseResult};
+use crate::error::{NetFlowError, ParseResult};
 use crate::flowset::TemplateParser;
 use crate::util::{take_u16, u16_to_bytes};
 
@@ -96,7 +96,7 @@ impl DataFlow {
                 },
             ))
         } else {
-            Err(Error::TemplateNotFound)
+            Err(NetFlowError::TemplateNotFound)
         }
     }
 

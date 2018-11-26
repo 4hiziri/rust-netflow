@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test_data;
 
-use crate::error::Error;
+use crate::error::NetFlowError;
 use crate::flowset::FlowSet;
 use crate::util::{take_u16, take_u32, u16_to_bytes, u32_to_bytes};
 
@@ -39,7 +39,7 @@ impl NetFlow9 {
         }
     }
 
-    pub fn from_bytes(payload: &[u8]) -> Result<Self, Error> {
+    pub fn from_bytes(payload: &[u8]) -> Result<Self, NetFlowError> {
         let (rest, version) = take_u16(payload)?;
 
         if version == 9 {
@@ -60,7 +60,7 @@ impl NetFlow9 {
                 flow_sets,
             })
         } else {
-            Err(Error::InvalidFieldValue)
+            Err(NetFlowError::InvalidFieldValue)
         }
     }
 

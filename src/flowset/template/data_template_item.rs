@@ -1,4 +1,4 @@
-use crate::error::{Error, ParseResult};
+use crate::error::{NetFlowError, ParseResult};
 use crate::field::{FlowField, TypeLengthField};
 use crate::flowset::{Record, TemplateParser};
 use crate::util::{take_u16, u16_to_bytes};
@@ -41,7 +41,7 @@ impl DataTemplateItem {
                 },
             ))
         } else {
-            Err(Error::InvalidLength)
+            Err(NetFlowError::InvalidLength)
         }
     }
 
